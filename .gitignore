@@ -5,4 +5,4 @@
 services/test.js
 services/facebookAuth.js
 /config.env
-
+/dist
