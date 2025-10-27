@@ -8,14 +8,11 @@ import axios from "axios";
 
 import ApiError from "../utils/apiError";
 import generatePassword from "../utils/tools/generatePassword";
-import { getDashboardRoles } from "./roleDashboardServices";
 import sendEmail from "../utils/sendEmail";
 import isEmail from "../utils/tools/isEmail";
 import createToken from "../utils/createToken";
 
 import Employee from "../models/employeeModel";
-import Roles from "../models/roleModel";
-import CompanyInfo from "../models/companyInfoModel";
 import { IEmployee } from "../models/interfaces/employee";
 import { AsyncHandler } from "../types/express";
 
@@ -26,27 +23,10 @@ interface EmployeeRequest extends Request {
     email?: string;
     name?: string;
     password?: string;
-    companyId?: string;
-    selectedRoles?: string;
-    subscribtion?: string;
-    userType?: string;
-    companyName?: string;
-    tags?: string;
-    stocks?: string;
-    expenseTags?: string;
-    purchaseTags?: string;
-    salesTags?: string;
-    selectedQuickActions?: string;
     newPassword?: string;
     image: string;
-    company?: Array<{
-      companyId: string;
-      selectedRoles: string;
-      companyName: string;
-    }>;
   };
   query: {
-    companyId?: string;
     limit?: string;
     page?: string;
     keyword?: string;
@@ -98,21 +78,15 @@ export const resizerEmployeeImage: AsyncHandler = asyncHandler(
 export const getEmployees: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
     try {
-      const companyId = req.query.companyId;
 
-      if (!companyId) {
-        res.status(400).json({ message: "companyId is required" });
-        return;
-      }
+
 
       const pageSize = parseInt(req.query.limit || "10");
       const page = parseInt(req.query.page || "1");
       const skip = (page - 1) * pageSize;
 
       let query: any = {
-        company: {
-          $elemMatch: { companyId },
-        },
+
       };
 
       if (req.query.keyword) {
@@ -128,24 +102,12 @@ export const getEmployees: AsyncHandler = asyncHandler(
       const employees = await Employee.find(query)
         .skip(skip)
         .limit(pageSize)
-        .populate({
-          path: "company.selectedRoles",
-          select: "name _id",
-        });
 
-      const employeesWithRoles = employees.map((emp) => {
-        const companyData = emp.company?.find((c) => c.companyId === companyId);
-        return {
-          ...emp.toObject(),
-          selectedRoles: companyData?.selectedRoles || null,
-        };
-      });
 
       res.status(200).json({
         status: "true",
         Pages: totalPages,
         results: totalItems,
-        data: employeesWithRoles,
       });
     } catch (error) {
       console.error("Error fetching employees:", error);
@@ -160,73 +122,24 @@ export const getEmployees: AsyncHandler = asyncHandler(
 export const createEmployee: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
     const email = req.body.email;
-    const companyId = req.query.companyId;
 
-    if (!companyId) {
-      res.status(400).json({ message: "companyId is required" });
-      return;
-    }
+
 
     if (!email || !isEmail(email)) {
       return next(new ApiError("There is an error in email format", 500));
     }
 
-    req.body.companyId = companyId;
-    const findEmployee = await Employee.findOne({ email });
-    let employee;
-
     try {
       const employeePass = generatePassword();
-      const company = await CompanyInfo.findById(companyId);
 
-      if (!company) {
-        return next(new ApiError("Company not found", 404));
-      }
+      await sendEmail({
+        email: req.body.email,
+        subject: "New Password",
+        message: `Hello ${req.body.name}, Your password is ${employeePass}`,
+      });
 
-      req.body.tags = req.body.tags ? JSON.parse(req.body.tags) : [];
-      req.body.stocks = req.body.stocks ? JSON.parse(req.body.stocks) : [];
-      req.body.expenseTags = req.body.expenseTags
-        ? JSON.parse(req.body.expenseTags)
-        : [];
-      req.body.purchaseTags = req.body.purchaseTags
-        ? JSON.parse(req.body.purchaseTags)
-        : [];
-      req.body.salesTags = req.body.salesTags
-        ? JSON.parse(req.body.salesTags)
-        : [];
-      req.body.company = [
-        {
-          companyId,
-          selectedRoles: req.body.selectedRoles,
-          companyName: company.companyName,
-        },
-      ];
+      const employee = await Employee.create(req.body);
 
-      if (!findEmployee) {
-        req.body.password = await bcrypt.hash(employeePass, 12);
-
-        await sendEmail({
-          email: req.body.email,
-          subject: "New Password",
-          message: `Hello ${req.body.name}, Your password is ${employeePass}`,
-        });
-
-        employee = await Employee.create(req.body);
-      } else {
-        employee = await Employee.findByIdAndUpdate(
-          findEmployee._id,
-          {
-            $addToSet: {
-              company: {
-                companyId,
-                selectedRoles: req.body.selectedRoles,
-                companyName: company.companyName,
-              },
-            },
-          },
-          { new: true }
-        );
-      }
 
       res.status(201).json({
         status: "true",
@@ -239,79 +152,11 @@ export const createEmployee: AsyncHandler = asyncHandler(
   }
 );
 
-export const createEmployeeInPos: AsyncHandler = asyncHandler(
-  async (req: EmployeeRequest, res, next) => {
-    const email = req.body.email;
-    const companyId = req.query.companyId;
-
-    if (!companyId) {
-      res.status(400).json({ message: "companyId is required" });
-      return;
-    }
-
-    if (!email || !isEmail(email)) {
-      return next(new ApiError("Invalid email format", 400));
-    }
-
-    req.body.companyId = companyId;
-
-    try {
-      const employeePass = generatePassword();
-      const hashedPassword = await bcrypt.hash(employeePass, 12);
-
-      req.body.password = hashedPassword;
-
-      await sendEmail({
-        email: req.body.email,
-        subject: "New Password",
-        message: `Hello ${req.body.name}, Your password is ${employeePass}`,
-      });
-
-      // req.body.companySubscribtionId = req.body.subscribtion;
-      req.body.userType = "normal";
-
-      if (req.body.userType === "normal" && req.body.subscribtion) {
-        await axios.post(`${process.env.BASE_URL_FOR_SUB}:4001/api/allusers`, {
-          email,
-          subscribtion: [req.body.subscribtion],
-          userType: req.body.userType,
-        });
-      }
-
-      req.body.tags = req.body.tags ? JSON.parse(req.body.tags) : [];
-      req.body.stocks = req.body.stocks ? JSON.parse(req.body.stocks) : [];
-      req.body.expenseTags = req.body.expenseTags
-        ? JSON.parse(req.body.expenseTags)
-        : [];
-      req.body.purchaseTags = req.body.purchaseTags
-        ? JSON.parse(req.body.purchaseTags)
-        : [];
-      req.body.salesTags = req.body.salesTags
-        ? JSON.parse(req.body.salesTags)
-        : [];
-
-      const employee = await Employee.create(req.body);
-
-      res.status(201).json({
-        status: 200,
-        message: "Employee Inserted",
-        data: employee,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
 
 export const reSendPassword: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
     const { email } = req.body;
-    const companyId = req.query.companyId;
 
-    if (!companyId) {
-      res.status(400).json({ message: "companyId is required" });
-      return;
-    }
 
     const findEmployee = await Employee.findOne({ email });
     if (!findEmployee) {
@@ -329,7 +174,7 @@ export const reSendPassword: AsyncHandler = asyncHandler(
       });
 
       const employee = await Employee.findOneAndUpdate(
-        { email, companyId },
+        { email },
         { password: hashedPassword },
         { new: true }
       );
@@ -351,53 +196,20 @@ export const reSendPassword: AsyncHandler = asyncHandler(
 export const getEmployee: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
     const { id } = req.params;
-    const companyId = req.query.companyId;
 
-    if (!companyId) {
-      res.status(400).json({ message: "companyId is required" });
-      return;
-    }
 
     const employee = await Employee.findOne({
       _id: id,
-      company: {
-        $elemMatch: { companyId },
-      },
-    }).select("-password -pin -createdAt -updatedAt");
+
+    })
 
     if (!employee) {
       return next(new ApiError(`No employee by this id ${id}`, 404));
     }
 
-    const companyData = employee.company?.find(
-      (c) => c.companyId.toString() === companyId.toString()
-    );
-
-    if (!companyData?.selectedRoles) {
-      return next(new ApiError("No roles found for this employee", 404));
-    }
-
-    const roles = await Roles.findOne({
-      _id: companyData.selectedRoles,
-      companyId,
-    });
-
-    if (!roles) {
-      return next(new ApiError("No roles found", 404));
-    }
-
-    const dashRoleName = await getDashboardRoles(
-      roles.rolesDashboard,
-      companyId
-    );
-
-    const employeeData = employee.toObject();
-    employeeData.selectedRoles = roles._id;
-
     res.status(200).json({
       status: "true",
-      data: employeeData,
-      dashBoardRoles: dashRoleName,
+      data: employee,
     });
   }
 );
@@ -407,12 +219,7 @@ export const getEmployee: AsyncHandler = asyncHandler(
 //@access Private
 export const updateEmployeePassword: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
-    const companyId = req.query.companyId;
 
-    if (!companyId) {
-      res.status(400).json({ message: "companyId is required" });
-      return;
-    }
 
     if (!req.user?._id) {
       return next(new ApiError("User not authenticated", 401));
@@ -421,7 +228,7 @@ export const updateEmployeePassword: AsyncHandler = asyncHandler(
     const hashedPassword = await bcrypt.hash(req.body.newPassword || "", 12);
 
     const user = await Employee.findOneAndUpdate(
-      { _id: req.user._id, companyId },
+      { _id: req.user._id },
       {
         password: hashedPassword,
         passwordChangedAt: new Date().toISOString(),
@@ -444,13 +251,9 @@ export const updateEmployeePassword: AsyncHandler = asyncHandler(
 //@access Private
 export const updateEmployee: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
-    const companyId = req.query.companyId;
     const { id } = req.params;
 
-    if (!companyId) {
-      res.status(400).json({ message: "companyId is required" });
-      return;
-    }
+
 
     if (!id) {
       return next(new ApiError("Employee ID is required", 400));
@@ -458,27 +261,10 @@ export const updateEmployee: AsyncHandler = asyncHandler(
 
     const updateData: any = { ...req.body };
 
-    // Parse JSON strings if present
-    if (req.body.tags) updateData.tags = JSON.parse(req.body.tags);
-    if (req.body.stocks) updateData.stocks = JSON.parse(req.body.stocks);
-    if (req.body.expenseTags)
-      updateData.expenseTags = JSON.parse(req.body.expenseTags);
-    if (req.body.purchaseTags)
-      updateData.purchaseTags = JSON.parse(req.body.purchaseTags);
-    if (req.body.salesTags)
-      updateData.salesTags = JSON.parse(req.body.salesTags);
-    if (req.body.selectedQuickActions)
-      updateData.selectedQuickActions = JSON.parse(
-        req.body.selectedQuickActions
-      );
 
-    if (req.body.selectedRoles) {
-      updateData["company.$.selectedRoles"] = req.body.selectedRoles;
-      delete updateData.selectedRoles;
-    }
 
     const employee = await Employee.findOneAndUpdate(
-      { _id: id, "company.companyId": companyId },
+      { _id: id, },
       { $set: updateData },
       { new: true }
     );
@@ -501,12 +287,6 @@ export const updateEmployee: AsyncHandler = asyncHandler(
 export const deleteEmployee: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
     const { id } = req.params;
-    const companyId = req.query.companyId;
-
-    if (!companyId) {
-      res.status(400).json({ message: "companyId is required" });
-      return;
-    }
 
     const employeeToUpdate = await Employee.findById(id);
 

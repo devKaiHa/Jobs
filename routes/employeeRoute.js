@@ -5,16 +5,13 @@ const {
   deleteEmployee,
   getEmployee,
   updateEmployee,
-  createEmployeeInPos,
   updateEmployeePassword,
   uploadEmployeeImage,
   resizerEmployeeImage,
   reSendPassword,
 } = require("../services/employeeServices");
 const {
-  createEmployeeValidator,
-  updateEmployeeValidator,
-  updateNameValidator,
+
   getEmployeeVlaidator,
   deleteEmployeeVlaidator,
   updatePasswordValidator,

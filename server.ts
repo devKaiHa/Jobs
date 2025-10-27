@@ -3,7 +3,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
-import globalError from "./middlewares/errorMiddleware";
+import {globalError} from "./middlewares/errorMiddleware";
 import dbContacion from "./config/database";
 import mountRoutes from "./routes";
 
