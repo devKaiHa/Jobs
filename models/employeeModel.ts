@@ -23,7 +23,8 @@ const emoloyeeShcema = new mongoose.Schema(
     },
     passwordChangedAt: String,
     passwordResetCode: String,
-    passwordResetExpires: String,
+    passwordResetExpires: Number,
+    resetCodeVerified: Boolean,
     passwordResetVerified: Boolean,
     archives: {
       type: String,
@@ -32,8 +33,6 @@ const emoloyeeShcema = new mongoose.Schema(
     },
 
     image: String,
-
-
   },
   { timestamps: true }
 );

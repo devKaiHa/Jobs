@@ -7,6 +7,7 @@ import ApiError from "../utils/apiError";
 import createToken from "../utils/createToken";
 import Employee from "../models/employeeModel";
 import { IEmployee } from "../models/interfaces/employee";
+import sendEmail from "../utils/sendEmail";
 
 type AsyncRequestHandler<T = any> = (
   req: Request & T,
@@ -14,11 +15,12 @@ type AsyncRequestHandler<T = any> = (
   next: NextFunction
 ) => Promise<any>;
 
+// ====== Interfaces ======
 interface LoginRequest extends Request {
   body: {
     email: string;
     password: string;
-    companyId: string;
+    companyId?: string;
   };
 }
 
@@ -26,18 +28,25 @@ interface AuthenticatedRequest extends Request {
   user?: IEmployee;
 }
 
+interface SignupRequest extends Request {
+  body: {
+    name: string;
+    email: string;
+    password: string;
+    companyId?: string;
+  };
+}
+
 interface ForgotPasswordRequest extends Request {
   body: {
     email: string;
   };
-
 }
 
 interface ResetCodeRequest extends Request {
   body: {
     resetCode: string;
   };
-
 }
 
 interface ResetPasswordRequest extends Request {
@@ -45,175 +54,164 @@ interface ResetPasswordRequest extends Request {
     email: string;
     newPassword: string;
   };
-
 }
 
-// @desc      Login
-// @route     POST /api/auth/login
-// @access    Public
-export const login = asyncHandler(
-  async (req: LoginRequest, res: Response, next: NextFunction) => {
-    try {
-      // Fetch the user and check email and password in parallel
-      const user = await Employee.findOne({
-        email: req.body.email,
-      })
-      if (!user) {
-        return next(new ApiError("Incorrect email", 401));
-      }
+// ====== Signup ======
+export const signup = asyncHandler(
+  async (req: SignupRequest, res: Response, next: NextFunction) => {
+    const { name, email, password, companyId } = req.body;
 
-      // Check password
-      const passwordMatch = await bcrypt.compare(
-        req.body.password,
-        user.password
-      );
-      if (!passwordMatch) {
-        return next(new ApiError("Incorrect Password", 401));
-      }
+    const existingUser = await Employee.findOne({ email });
+    if (existingUser) return next(new ApiError("Email already registered", 400));
 
-      // Check if the user is active
-      if (user.archives === "true") {
-        return next(new ApiError("The account is not active", 401));
-      }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Remove the password and pin from the user object
-      user.password = undefined;
+    const newEmployee = await Employee.create({
+      name,
+      email,
+      password: hashedPassword,
+      active: true,
+      company: companyId
+        ? [
+            {
+              companyId,
+              companyName: "Default Company",
+            },
+          ]
+        : [],
+    });
 
+    const token = createToken(newEmployee._id);
 
+    newEmployee.password = undefined;
 
-
-      const token = createToken(user._id);
-      res.status(200).json({
-        status: "true",
-        data: user,
-        token,
-      });
-    } catch (error) {
-      console.error("Error during login:", error);
-      next(error);
-    }
+    res.status(201).json({
+      status: "success",
+      message: "User registered successfully",
+      data: newEmployee,
+      token,
+    });
   }
 );
 
-// @desc   make sure the user is logged in sys
+// ====== Login ======
+export const login = asyncHandler(
+  async (req: LoginRequest, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
+
+    const user = await Employee.findOne({ email });
+    if (!user) return next(new ApiError("Incorrect email", 401));
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) return next(new ApiError("Incorrect password", 401));
+
+    if (user.archives === "true") return next(new ApiError("Account is not active", 401));
+
+    user.password = undefined;
+
+    const token = createToken(user._id);
+
+    res.status(200).json({
+      status: "success",
+      data: user,
+      token,
+    });
+  }
+);
+
+// ====== Protect Middleware ======
 export const protect = asyncHandler(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-
-
     let token: string | undefined;
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
+
+    if (req.headers.authorization?.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
     }
 
-    if (!token) {
-      return next(new ApiError("Not login", 401));
-    }
+    if (!token) return next(new ApiError("Not logged in", 401));
 
     try {
-      // Verify token (no change happens, expired token)
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET_KEY as string
-      ) as { userId: string };
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as { userId: string };
 
-      // Check if user exists
-      const currentUser = await Employee.findOne({
-        _id: decoded.userId,
-      });
-
-      if (!currentUser) {
-        return next(new ApiError("The user does not exist", 404));
-      }
+      const currentUser = await Employee.findOne({ _id: decoded.userId });
+      if (!currentUser) return next(new ApiError("The user does not exist", 404));
 
       req.user = currentUser;
       next();
     } catch (error: any) {
-      // Token verification failed
       console.error("JWT Error:", error.message);
       if (error.name === "TokenExpiredError") {
         return next(new ApiError("Token has expired", 401));
       } else {
-        console.error("JWT Error:", error.message);
-        return next(new ApiError("Not login", 401));
+        return next(new ApiError("Not logged in", 401));
       }
     }
   }
 );
 
+// ====== Forgot Password ======
+export const forgotPassword = asyncHandler(
+  async (req: ForgotPasswordRequest, res: Response, next: NextFunction) => {
+    const { email } = req.body;
 
+    const user = await Employee.findOne({ email });
+    if (!user) return next(new ApiError("There is no user with that email", 404));
 
+    const resetCode: string = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedResetCode: string = await bcrypt.hash(resetCode, 10);
 
-// @desc      Verify reset password code
-// @route     POST /api/auth/verifyresetcodepos
-// @access    Public
-export const verifyPasswordResetCodePos = asyncHandler(
-  async (req: ResetCodeRequest, res: Response, next: NextFunction) => {
+    user.passwordResetCode = hashedResetCode;
+    user.passwordResetExpires = (Date.now() + 10 * 60 * 1000); 
+    user.resetCodeVerified = false;
 
-    const { resetCode } = req.body;
-
-    const user = await Employee.findOne({
-      passwordResetExpires: { $gt: new Date() },
-    });
-
-    if (!user) {
-      return next(new ApiError("Reset code is invalid or has expired", 400));
-    }
-
-    if (!user.passwordResetCode) {
-      return next(new ApiError("No reset code found", 400));
-    }
-
-    // 3) Compare the reset code with the hashed code stored in the database
-    const isResetCodeValid = await bcrypt.compare(
-      resetCode,
-      user.passwordResetCode
-    );
-
-    if (!isResetCodeValid) {
-      return next(new ApiError("Reset code is invalid or has expired", 400));
-    }
-
-    // 4) Mark reset code as verified
-    user.resetCodeVerified = true;
     await user.save();
 
+    const message = `Hello ${user.name},\n\nYour password reset code is: ${resetCode}\nIt will expire in 10 minutes.`;
+
+    await sendEmail({
+      email: user.email,
+      subject: "SmartPOS Password Reset Code",
+      message,
+    });
+
     res.status(200).json({
-      status: "Success",
+      status: "success",
+      message: "Reset code sent to email",
     });
   }
 );
 
-// @desc      Reset password
-// @route     POST /api/auth/resetpasswordpos
-// @access    Public
+// ====== Verify Reset Code ======
+export const verifyPasswordResetCodePos = asyncHandler(
+  async (req: ResetCodeRequest, res: Response, next: NextFunction) => {
+    const { resetCode } = req.body;
+
+    const user = await Employee.findOne({ passwordResetExpires: { $gt: new Date() } });
+    if (!user) return next(new ApiError("Reset code is invalid or has expired", 400));
+    if (!user.passwordResetCode) return next(new ApiError("No reset code found", 400));
+
+    const isResetCodeValid = await bcrypt.compare(resetCode, user.passwordResetCode);
+    if (!isResetCodeValid) return next(new ApiError("Reset code is invalid or has expired", 400));
+
+    user.resetCodeVerified = true;
+    await user.save();
+
+    res.status(200).json({ status: "success" });
+  }
+);
+
+// ====== Reset Password ======
 export const resetPasswordPos = asyncHandler(
   async (req: ResetPasswordRequest, res: Response, next: NextFunction) => {
+    const { email, newPassword } = req.body;
 
-    // 1) Get user based on email
-    const user = await Employee.findOne({
-      email: req.body.email,
-    });
+    const user = await Employee.findOne({ email });
+    if (!user) return next(new ApiError(`There is no user with this email address ${email}`, 404));
 
-    if (!user) {
-      return next(
-        new ApiError(
-          `There is no user with this email address ${req.body.email}`,
-          404
-        )
-      );
-    }
+    if (!user.resetCodeVerified) return next(new ApiError("Reset code not verified", 400));
 
-    // Check if user verify the reset code
-    if (!user.resetCodeVerified) {
-      return next(new ApiError("reset code not verified", 400));
-    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const hashedPassword = await bcrypt.hash(req.body.newPassword, 10);
-
-    // 2) Update user password & Hide passwordResetCode & passwordResetExpires from the result
     user.password = hashedPassword;
     user.passwordResetCode = undefined;
     user.passwordResetExpires = undefined;
@@ -221,9 +219,7 @@ export const resetPasswordPos = asyncHandler(
 
     await user.save();
 
-    // 3) If everything ok, send token to client
     const token = createToken(user._id);
-
-    res.status(200).json({ user: user, token });
+    res.status(200).json({ user, token });
   }
 );

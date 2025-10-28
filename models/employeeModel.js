@@ -25,8 +25,10 @@ const emoloyeeShcema = new mongoose.Schema(
     },
     passwordChangedAt: String,
     passwordResetCode: String,
-    passwordResetExpires: String,
+    passwordResetExpires: Number,
     passwordResetVerified: Boolean,
+    resetCodeVerified: Boolean,
+
     selectedRoles: {
       type: mongoose.Schema.ObjectId,
       ref: "Roles",
