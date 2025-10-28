@@ -1,20 +1,5 @@
-import mongoose, { Document } from "mongoose";
-
-export interface IJobsCompany extends Document {
-  name?: string;
-  slug?: string;
-  email?: string;
-  phone?: string;
-  city?: string;
-  country?: string;
-  description?: string;
-  logo?: string;
-  verified?: boolean;
-  jobs?: mongoose.Types.ObjectId[];
-  files?: Array<{ key: string; fileUrl: string }>;
-  createdBy?: mongoose.Types.ObjectId;
-  isActive?: boolean;
-}
+import mongoose from "mongoose";
+import { IJobsCompany } from "../interfaces/jobsCompany";
 
 const jobsCompanyModel = new mongoose.Schema(
   {
@@ -39,7 +24,8 @@ const jobsCompanyModel = new mongoose.Schema(
       _id: false,
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "JobsUser" },
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: false },
+    isNewCompany: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
