@@ -118,12 +118,10 @@ export const verifyEmailJobSeekers = asyncHandler(
     jobSeeker.emailVerificationExpires = undefined;
     await jobSeeker.save();
 
-    const token = createToken(jobSeeker._id);
 
     res.status(200).json({
       status: "success",
       message: "Email verified successfully",
-      token,
     });
   }
 );
