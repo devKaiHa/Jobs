@@ -5,83 +5,61 @@ import bcrypt from "bcrypt";
 import ApiError from "../utils/apiError";
 import createToken from "../utils/createToken";
 import Employee from "../models/employeeModel";
-import sendEmail from "../utils/sendEmail";
 import { IEmployee } from "../models/interfaces/employee";
 
 // ====== Interfaces ======
 interface LoginRequest extends Request {
-  body: {
-    email: string;
-    password: string;
-  };
+  body: { email: string; password: string };
+}
+
+interface SignupRequest extends Request {
+  body: { name: string; email: string; password: string };
 }
 
 interface AuthenticatedRequest extends Request {
   user?: IEmployee;
 }
 
-interface SignupRequest extends Request {
-  body: {
-    name: string;
-    email: string;
-    password: string;
-    companyId?: string;
-  };
-}
-
 interface ForgotPasswordRequest extends Request {
-  body: {
-    email: string;
-  };
-}
-
-interface TwoFactorRequest extends Request {
-  body: {
-    email: string;
-    otpCode: string;
-  };
+  body: { email: string };
 }
 
 interface ResetCodeRequest extends Request {
-  body: {
-    email: string;
-    resetCode: string;
-  };
+  body: { email: string; resetCode: string };
 }
 
 interface ResetPasswordRequest extends Request {
-  body: {
-    email: string;
-    newPassword: string;
-  };
+  body: { email: string; newPassword: string };
 }
 
-// ====== Signup ======
+// ====== Signup (Admin) ======
 export const signup = asyncHandler(
   async (req: SignupRequest, res: Response, next: NextFunction) => {
-    const { name, email, password, companyId } = req.body;
+    const { name, email, password } = req.body;
 
+    // Check if email already exists
     const existingUser = await Employee.findOne({ email });
     if (existingUser)
       return next(new ApiError("Email already registered", 400));
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create new admin
     const newEmployee = await Employee.create({
       name,
       email,
       password: hashedPassword,
       active: true,
-      ...(companyId && {
-        company: [{ companyId, companyName: "Default Company" }],
-      }),
+      role: "admin",
     });
 
+    // Generate token for immediate login
     newEmployee.password = undefined;
 
     res.status(201).json({
       status: "success",
-      message: "Employee registered successfully",
+      message: "Admin registered successfully",
       data: newEmployee,
     });
   }
@@ -100,52 +78,6 @@ export const login = asyncHandler(
 
     if (user.archives === "true")
       return next(new ApiError("Account is not active", 401));
-
-    // Generate OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedOtp = await bcrypt.hash(otpCode, 10);
-
-    user.passwordResetCode = hashedOtp;
-    user.passwordResetExpires = Date.now() + 5 * 60 * 1000; // 5 mins
-    await user.save();
-
-    const message = `Hello ${user.name},\nYour login verification code is: ${otpCode}\nThis code will expire in 5 minutes.`;
-
-    await sendEmail({
-      email: user.email,
-      subject: "SmartPOS Login Verification Code",
-      message,
-    });
-
-    res.status(200).json({
-      status: "pending",
-      message: "Verification code sent to your email",
-    });
-  }
-);
-
-// ====== Verify Two-Factor ======
-export const verifyTwoFactor = asyncHandler(
-  async (req: TwoFactorRequest, res: Response, next: NextFunction) => {
-    const { email, otpCode } = req.body;
-
-    const user = await Employee.findOne({
-      email,
-      passwordResetExpires: { $gt: new Date() },
-    });
-
-    if (!user)
-      return next(new ApiError("Verification code invalid or expired", 400));
-    if (!user.passwordResetCode)
-      return next(new ApiError("No verification code found", 400));
-
-    const isValid = await bcrypt.compare(otpCode, user.passwordResetCode);
-    if (!isValid)
-      return next(new ApiError("Verification code invalid or expired", 400));
-
-    user.passwordResetCode = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save();
 
     const token = createToken(user._id);
     user.password = undefined;
@@ -183,9 +115,9 @@ export const protect = asyncHandler(
       req.user = currentUser;
       next();
     } catch (error: any) {
-      if (error.name === "TokenExpiredError") {
+      if (error.name === "TokenExpiredError")
         return next(new ApiError("Token has expired", 401));
-      }
+
       return next(new ApiError("Not logged in", 401));
     }
   }
@@ -195,7 +127,6 @@ export const protect = asyncHandler(
 export const forgotPassword = asyncHandler(
   async (req: ForgotPasswordRequest, res: Response, next: NextFunction) => {
     const { email } = req.body;
-
     const user = await Employee.findOne({ email });
     if (!user)
       return next(new ApiError("No account found with this email", 404));
@@ -209,17 +140,9 @@ export const forgotPassword = asyncHandler(
 
     await user.save();
 
-    const message = `Hello ${user.name},\nYour password reset code is: ${resetCode}\nThis code will expire in 10 minutes.`;
-
-    await sendEmail({
-      email: user.email,
-      subject: "SmartPOS Password Reset Code",
-      message,
-    });
-
     res.status(200).json({
       status: "success",
-      message: "Reset code sent to your email",
+      message: `Reset code generated successfully (for testing): ${resetCode}`,
     });
   }
 );

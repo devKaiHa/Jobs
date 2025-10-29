@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { IUser } from "./interfaces/user";
+import { IUser } from "./interfaces/jobSekeers";
 
 const emoloyeeShcema = new mongoose.Schema(
   {
@@ -25,8 +25,11 @@ const emoloyeeShcema = new mongoose.Schema(
     passwordChangedAt: String,
     passwordResetCode: String,
     passwordResetExpires: Number,
+    emailVerificationCode: String,
+    emailVerificationExpires: Number,
     passwordResetVerified: Boolean,
     resetCodeVerified: Boolean,
+
     archives: {
       type: String,
       enum: ["true", "false"],

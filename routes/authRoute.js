@@ -8,33 +8,34 @@ const {
   verifyPasswordResetCodePos,
   forgotPassword,
   signup,
-  verifyTwoFactor,
 } = require("../services/employeeAuthService");
 const {
-  forgotPasswordUser,
-  loginUser,
-  resetPasswordUser,
-  signupUser,
-  verifyPasswordResetCodeUser,
-  verifyTwoFactorUser,
-} = require("../services/userAuthService");
+  forgotPasswordJobSeekers,
+  loginJobSeekers,
+  resetPasswordJobSeekers,
+  signupJobSeekers,
+  verifyPasswordResetCodeJobSeekers,
+  verifyEmailJobSeekers,
+} = require("../services/jobSeekersAuthService");
 
 const router = express.Router();
 
 router.post("/login", upload.none(), login);
-router.post("/verifyTwoFactor", verifyTwoFactor);
 router.post("/verifyresetcodepos", verifyPasswordResetCodePos);
 router.post("/forgotPassword", forgotPassword);
 router.post("/signup", signup);
 router.put("/resetpasswordpos", upload.none(), resetPasswordPos);
 
-//user
+//job seekers
 
-router.post("/loginUser", upload.none(), loginUser);
-router.post("/verifyTwoFactorUser", verifyTwoFactorUser);
-router.post("/verifyPasswordResetCodeUser", verifyPasswordResetCodeUser);
-router.post("/forgotPasswordUser", forgotPasswordUser);
-router.post("/signupUser", signupUser);
-router.put("/resetPasswordUser", upload.none(), resetPasswordUser);
+router.post("/loginSeekers", upload.none(), loginJobSeekers);
+router.post(
+  "/verifyPasswordResetCodeSeekers",
+  verifyPasswordResetCodeJobSeekers
+);
+router.post("/forgotPasswordSeekers", forgotPasswordJobSeekers);
+router.post("/signupSeekers", signupJobSeekers);
+router.post("/verifyEmailJobSeekers", verifyEmailJobSeekers);
+router.put("/resetPasswordSeekers", upload.none(), resetPasswordJobSeekers);
 
 module.exports = router;

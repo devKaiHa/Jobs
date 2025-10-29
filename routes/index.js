@@ -1,4 +1,3 @@
-
 const authRoute = require("./authRoute");
 const jobsCompaniesRoute = require("./jobs/jobsCompaniesRoute");
 const jobsUsersRoute = require("./jobs/jobsUsersRoute");
