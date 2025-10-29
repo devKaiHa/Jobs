@@ -2,25 +2,17 @@ import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-
 import ApiError from "../utils/apiError";
 import createToken from "../utils/createToken";
 import Employee from "../models/employeeModel";
-import { IEmployee } from "../models/interfaces/employee";
 import sendEmail from "../utils/sendEmail";
-
-type AsyncRequestHandler<T = any> = (
-  req: Request & T,
-  res: Response,
-  next: NextFunction
-) => Promise<any>;
+import { IEmployee } from "../models/interfaces/employee";
 
 // ====== Interfaces ======
 interface LoginRequest extends Request {
   body: {
     email: string;
     password: string;
-    companyId?: string;
   };
 }
 
@@ -43,8 +35,16 @@ interface ForgotPasswordRequest extends Request {
   };
 }
 
+interface TwoFactorRequest extends Request {
+  body: {
+    email: string;
+    otpCode: string;
+  };
+}
+
 interface ResetCodeRequest extends Request {
   body: {
+    email: string;
     resetCode: string;
   };
 }
@@ -62,7 +62,8 @@ export const signup = asyncHandler(
     const { name, email, password, companyId } = req.body;
 
     const existingUser = await Employee.findOne({ email });
-    if (existingUser) return next(new ApiError("Email already registered", 400));
+    if (existingUser)
+      return next(new ApiError("Email already registered", 400));
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -71,25 +72,17 @@ export const signup = asyncHandler(
       email,
       password: hashedPassword,
       active: true,
-      company: companyId
-        ? [
-            {
-              companyId,
-              companyName: "Default Company",
-            },
-          ]
-        : [],
+      ...(companyId && {
+        company: [{ companyId, companyName: "Default Company" }],
+      }),
     });
-
-    const token = createToken(newEmployee._id);
 
     newEmployee.password = undefined;
 
     res.status(201).json({
       status: "success",
-      message: "User registered successfully",
+      message: "Employee registered successfully",
       data: newEmployee,
-      token,
     });
   }
 );
@@ -105,15 +98,62 @@ export const login = asyncHandler(
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return next(new ApiError("Incorrect password", 401));
 
-    if (user.archives === "true") return next(new ApiError("Account is not active", 401));
+    if (user.archives === "true")
+      return next(new ApiError("Account is not active", 401));
 
-    user.password = undefined;
+    // Generate OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otpCode, 10);
+
+    user.passwordResetCode = hashedOtp;
+    user.passwordResetExpires = Date.now() + 5 * 60 * 1000; // 5 mins
+    await user.save();
+
+    const message = `Hello ${user.name},\nYour login verification code is: ${otpCode}\nThis code will expire in 5 minutes.`;
+
+    await sendEmail({
+      email: user.email,
+      subject: "SmartPOS Login Verification Code",
+      message,
+    });
+
+    res.status(200).json({
+      status: "pending",
+      message: "Verification code sent to your email",
+    });
+  }
+);
+
+// ====== Verify Two-Factor ======
+export const verifyTwoFactor = asyncHandler(
+  async (req: TwoFactorRequest, res: Response, next: NextFunction) => {
+    const { email, otpCode } = req.body;
+
+    const user = await Employee.findOne({
+      email,
+      passwordResetExpires: { $gt: new Date() },
+    });
+
+    if (!user)
+      return next(new ApiError("Verification code invalid or expired", 400));
+    if (!user.passwordResetCode)
+      return next(new ApiError("No verification code found", 400));
+
+    const isValid = await bcrypt.compare(otpCode, user.passwordResetCode);
+    if (!isValid)
+      return next(new ApiError("Verification code invalid or expired", 400));
+
+    user.passwordResetCode = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
 
     const token = createToken(user._id);
+    user.password = undefined;
 
     res.status(200).json({
       status: "success",
-      data: user,
+      message: "Login successful ✅",
+      user,
       token,
     });
   }
@@ -131,20 +171,22 @@ export const protect = asyncHandler(
     if (!token) return next(new ApiError("Not logged in", 401));
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string) as { userId: string };
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY as string
+      ) as { userId: string };
 
-      const currentUser = await Employee.findOne({ _id: decoded.userId });
-      if (!currentUser) return next(new ApiError("The user does not exist", 404));
+      const currentUser = await Employee.findById(decoded.userId);
+      if (!currentUser)
+        return next(new ApiError("Employee does not exist", 404));
 
       req.user = currentUser;
       next();
     } catch (error: any) {
-      console.error("JWT Error:", error.message);
       if (error.name === "TokenExpiredError") {
         return next(new ApiError("Token has expired", 401));
-      } else {
-        return next(new ApiError("Not logged in", 401));
       }
+      return next(new ApiError("Not logged in", 401));
     }
   }
 );
@@ -155,18 +197,19 @@ export const forgotPassword = asyncHandler(
     const { email } = req.body;
 
     const user = await Employee.findOne({ email });
-    if (!user) return next(new ApiError("There is no user with that email", 404));
+    if (!user)
+      return next(new ApiError("No account found with this email", 404));
 
-    const resetCode: string = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedResetCode: string = await bcrypt.hash(resetCode, 10);
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedResetCode = await bcrypt.hash(resetCode, 10);
 
     user.passwordResetCode = hashedResetCode;
-    user.passwordResetExpires = (Date.now() + 10 * 60 * 1000); 
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
     user.resetCodeVerified = false;
 
     await user.save();
 
-    const message = `Hello ${user.name},\n\nYour password reset code is: ${resetCode}\nIt will expire in 10 minutes.`;
+    const message = `Hello ${user.name},\nYour password reset code is: ${resetCode}\nThis code will expire in 10 minutes.`;
 
     await sendEmail({
       email: user.email,
@@ -176,7 +219,7 @@ export const forgotPassword = asyncHandler(
 
     res.status(200).json({
       status: "success",
-      message: "Reset code sent to email",
+      message: "Reset code sent to your email",
     });
   }
 );
@@ -184,19 +227,24 @@ export const forgotPassword = asyncHandler(
 // ====== Verify Reset Code ======
 export const verifyPasswordResetCodePos = asyncHandler(
   async (req: ResetCodeRequest, res: Response, next: NextFunction) => {
-    const { resetCode } = req.body;
+    const { email, resetCode } = req.body;
 
-    const user = await Employee.findOne({ passwordResetExpires: { $gt: new Date() } });
-    if (!user) return next(new ApiError("Reset code is invalid or has expired", 400));
-    if (!user.passwordResetCode) return next(new ApiError("No reset code found", 400));
+    const user = await Employee.findOne({
+      email,
+      passwordResetExpires: { $gt: new Date() },
+    });
+    if (!user) return next(new ApiError("Reset code invalid or expired", 400));
+    if (!user.passwordResetCode)
+      return next(new ApiError("No reset code found", 400));
 
-    const isResetCodeValid = await bcrypt.compare(resetCode, user.passwordResetCode);
-    if (!isResetCodeValid) return next(new ApiError("Reset code is invalid or has expired", 400));
+    const isValid = await bcrypt.compare(resetCode, user.passwordResetCode);
+    if (!isValid)
+      return next(new ApiError("Reset code invalid or expired", 400));
 
     user.resetCodeVerified = true;
     await user.save();
 
-    res.status(200).json({ status: "success" });
+    res.status(200).json({ status: "success", message: "Code verified" });
   }
 );
 
@@ -206,9 +254,11 @@ export const resetPasswordPos = asyncHandler(
     const { email, newPassword } = req.body;
 
     const user = await Employee.findOne({ email });
-    if (!user) return next(new ApiError(`There is no user with this email address ${email}`, 404));
+    if (!user)
+      return next(new ApiError(`No employee found with email ${email}`, 404));
 
-    if (!user.resetCodeVerified) return next(new ApiError("Reset code not verified", 400));
+    if (!user.resetCodeVerified)
+      return next(new ApiError("Reset code not verified", 400));
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -220,6 +270,11 @@ export const resetPasswordPos = asyncHandler(
     await user.save();
 
     const token = createToken(user._id);
-    res.status(200).json({ user, token });
+    res.status(200).json({
+      status: "success",
+      message: "Password reset successfully",
+      user,
+      token,
+    });
   }
 );

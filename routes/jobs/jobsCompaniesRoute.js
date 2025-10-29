@@ -1,5 +1,5 @@
 const express = require("express");
-const authService = require("../../services/authService");
+const authService = require("../../services/employeeAuthService");
 const {
   getCompanies,
   uploadCompaniesImage,

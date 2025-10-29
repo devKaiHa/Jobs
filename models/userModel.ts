@@ -24,8 +24,9 @@ const emoloyeeShcema = new mongoose.Schema(
     },
     passwordChangedAt: String,
     passwordResetCode: String,
-    passwordResetExpires: String,
+    passwordResetExpires: Number,
     passwordResetVerified: Boolean,
+    resetCodeVerified: Boolean,
     archives: {
       type: String,
       enum: ["true", "false"],
@@ -35,8 +36,11 @@ const emoloyeeShcema = new mongoose.Schema(
     profileImage: String,
     role: { type: String, default: "user" },
     cv: String,
-    gender: { type: String, enum: ["Male", "Female", "Other"], default: "Other" },
-
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other"],
+      default: "Other",
+    },
   },
   { timestamps: true }
 );

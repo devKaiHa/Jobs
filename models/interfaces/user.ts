@@ -8,7 +8,7 @@ export interface IUser extends Document {
   password: string;
   passwordChangedAt?: string;
   passwordResetCode?: string;
-  passwordResetExpires?: string;
+  passwordResetExpires?: Number;
   passwordResetVerified?: boolean;
   resetCodeVerified?: boolean;
   archives?: string;

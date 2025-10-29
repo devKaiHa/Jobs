@@ -11,12 +11,11 @@ const {
   reSendPassword,
 } = require("../services/employeeServices");
 const {
-
   getEmployeeVlaidator,
   deleteEmployeeVlaidator,
   updatePasswordValidator,
 } = require("../utils/validators/employeeValidator");
-const authService = require("../services/authService");
+const authService = require("../services/employeeAuthService");
 
 const employeeRoute = express.Router();
 

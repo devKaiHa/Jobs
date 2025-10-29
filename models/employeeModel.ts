@@ -26,6 +26,12 @@ const emoloyeeShcema = new mongoose.Schema(
     passwordResetExpires: Number,
     resetCodeVerified: Boolean,
     passwordResetVerified: Boolean,
+    twoFactorCode: String,
+    twoFactorExpires: Date,
+    twoFactorVerified: {
+      type: Boolean,
+      default: false,
+    },
     archives: {
       type: String,
       enum: ["true", "false"],

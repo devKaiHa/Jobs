@@ -11,5 +11,8 @@ export interface IEmployee extends Document {
   passwordResetVerified?: boolean;
   resetCodeVerified?: boolean;
   archives?: string;
+  twoFactorCode?: string;
+  twoFactorExpires?: Date;
+  twoFactorVerified?: boolean;
   image?: string;
 }
