@@ -6,9 +6,10 @@ const {
   updateJobUser,
   deleteJobUser,
   getJobUsers,
-  uploadJobUsersImage,
+  resizeUserImage,
+  uploadJobUserImage,
   createJobUser,
-} = require("../../services/jobs/jobsUsersService");
+} = require("../../services/jobs/jobSeekersService");
 
 const jobsUsersRoute = express.Router();
 
@@ -17,8 +18,8 @@ jobsUsersRoute
   .get(getJobUsers)
   .post(
     authService.protect,
-    uploadJobUsersImage,
-    resizerUserImage,
+    uploadJobUserImage,
+    resizeUserImage,
     createJobUser
   );
 
@@ -27,8 +28,8 @@ jobsUsersRoute
   .get(getJobUser)
   .put(
     authService.protect,
-    uploadJobUsersImage,
-    resizerUserImage,
+    uploadJobUserImage,
+    resizeUserImage,
     updateJobUser
   )
   .delete(authService.protect, deleteJobUser);

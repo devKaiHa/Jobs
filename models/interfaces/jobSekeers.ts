@@ -4,19 +4,26 @@ export interface IUser extends Document {
   name: string;
   lastName?: string;
   email: string;
-  active?: boolean;
   password: string;
   passwordChangedAt?: string;
   passwordResetCode?: string;
-  passwordResetExpires?: Number;
-  emailVerificationCode?: String;
-  emailVerificationExpires?: Number;
-  passwordResetVerified?: boolean;
+  passwordResetExpires?: number;
+  emailVerificationCode?: string;
+  emailVerificationExpires?: number;
   resetCodeVerified?: boolean;
-  archives?: string;
-  profileImage?: string;
-  role?: string;
-  gender?: string;
-  cv?: string;
+  archives?: "true" | "false";
+  city?: string;
+  birthDate?: Date;
+  skills?: string[];
+  licenses?: string[];
+  country?: string;
   phone?: string;
+  verified?: boolean;
+  profileImage?: string;
+  role?: string
+  cv?: string;
+  gender?: "Male" | "Female" | "Other";
+  isActive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

@@ -113,7 +113,7 @@ export const verifyEmailJobSeekers = asyncHandler(
     if (!isValid)
       return next(new ApiError("Verification code invalid or expired", 400));
 
-    jobSeeker.active = true;
+    jobSeeker.verified = true;
     jobSeeker.emailVerificationCode = undefined;
     jobSeeker.emailVerificationExpires = undefined;
     await jobSeeker.save();
@@ -134,7 +134,7 @@ export const loginJobSeekers = asyncHandler(
     const jobSeeker = await JobSeekers.findOne({ email });
     if (!jobSeeker) return next(new ApiError("Incorrect email", 401));
 
-    if (!jobSeeker.active)
+    if (!jobSeeker.verified)
       return next(
         new ApiError("Please verify your email before logging in", 401)
       );

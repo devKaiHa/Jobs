@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { IUser } from "./interfaces/jobSekeers";
 
-const emoloyeeShcema = new mongoose.Schema(
+const jobSeekersSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -13,10 +13,6 @@ const emoloyeeShcema = new mongoose.Schema(
       require: [true, "email is require"],
       lowercase: true,
     },
-    active: {
-      type: Boolean,
-      default: true,
-    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -27,7 +23,6 @@ const emoloyeeShcema = new mongoose.Schema(
     passwordResetExpires: Number,
     emailVerificationCode: String,
     emailVerificationExpires: Number,
-    passwordResetVerified: Boolean,
     resetCodeVerified: Boolean,
 
     archives: {
@@ -35,7 +30,13 @@ const emoloyeeShcema = new mongoose.Schema(
       enum: ["true", "false"],
       default: "false",
     },
-
+    city: String,
+    birthDate: Date,
+    skills: [String],
+    licenses: [String],
+    country: String,
+    phone: String,
+    verified: { type: Boolean, default: false },
     profileImage: String,
     role: { type: String, default: "user" },
     cv: String,
@@ -44,6 +45,7 @@ const emoloyeeShcema = new mongoose.Schema(
       enum: ["Male", "Female", "Other"],
       default: "Other",
     },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
@@ -55,13 +57,13 @@ const setImageURL = (doc: any) => {
   }
 };
 
-emoloyeeShcema.post("init", function (doc: any) {
+jobSeekersSchema.post("init", function (doc: any) {
   setImageURL(doc);
 });
 
-emoloyeeShcema.post("save", (doc: any) => {
+jobSeekersSchema.post("save", (doc: any) => {
   setImageURL(doc);
 });
 
-const User = mongoose.model<IUser>("User", emoloyeeShcema);
-export default User;
+const JobSeekers = mongoose.model<IUser>("jobSeekers", jobSeekersSchema);
+export default JobSeekers;
