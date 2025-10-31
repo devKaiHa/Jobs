@@ -31,6 +31,6 @@ jobsCompaniesRoute
     processCompanyFiles,
     updateCompany
   )
-  .patch(authService.protect, deleteCompany);
+  .delete(authService.protect, deleteCompany);
 
 module.exports = jobsCompaniesRoute;

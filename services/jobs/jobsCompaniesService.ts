@@ -10,7 +10,6 @@ import fs from "fs";
 import path from "path";
 import { IJobsCompany } from "../../models/interfaces/jobsCompany";
 
-
 const multerStorage = multer.memoryStorage();
 const logoFilter = (
   req: Request,
@@ -31,7 +30,7 @@ const logoFilter = (
 const upload = multer({
   storage: multerStorage,
   fileFilter: logoFilter,
-  limits: { fileSize: 20 * 1024 * 1024 }, 
+  limits: { fileSize: 20 * 1024 * 1024 },
 });
 
 export const uploadCompanyFiles = upload.fields([
@@ -90,7 +89,6 @@ export const getCompanies = asyncHandler(
         { name: { $regex: req.query.keyword as string, $options: "i" } },
       ];
     }
-
 
     const totalItems = await JobsCompany.countDocuments(query);
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -158,17 +156,11 @@ export const updateCompany = asyncHandler(
   }
 );
 
-// =================== TOGGLE ACTIVE STATUS ===================
 export const deleteCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
-    const { isActive } = req.body;
 
-    const company = await JobsCompany.findByIdAndUpdate(
-      id,
-      { isActive },
-      { new: true }
-    );
+    const company = await JobsCompany.findByIdAndDelete(id);
 
     if (!company) {
       return next(new ApiError(`No company found for ID ${id}`, 404));
@@ -176,7 +168,7 @@ export const deleteCompany = asyncHandler(
 
     res.status(200).json({
       status: "success",
-      message: "Company deleted (status updated)",
+      message: "Company deleted",
     });
   }
 );

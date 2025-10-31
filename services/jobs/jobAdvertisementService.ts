@@ -46,6 +46,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
   if (req.query.keyword) {
     query.$or = [
       { jobTitle: { $regex: req.query.keyword as string, $options: "i" } },
+      { location: { $regex: req.query.keyword as string, $options: "i" } },
     ];
   }
 
@@ -144,6 +145,6 @@ export const deleteJob = asyncHandler(
       return next(new ApiError(`No job found for ID: ${id}`, 404));
     }
 
-    res.status(200).json({ status: "success", data: job });
+    res.status(200).json({ status: "success", message: "job deleted" });
   }
 );
