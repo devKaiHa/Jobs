@@ -12,31 +12,11 @@ const jobAdSchema = new Schema<IJobs>(
     qualifications: [{ type: String }],
     endDate: { type: String },
     skills: [{ type: String }],
-    companyInfo: {
-      name: { type: String },
-      logo: { type: String },
-      location: { type: String },
-      email: { type: String },
-    },
+    companyId: { type: Schema.Types.ObjectId, ref: "jobCompanies" },
     status: { type: Boolean },
   },
   { timestamps: true }
 );
-
-const setImageURL = (doc: IJobs) => {
-  if (doc.companyInfo && doc.companyInfo.logo) {
-    const imageUrl = `${process.env.BASE_URL}/jobAdvertisement/${doc.companyInfo.logo}`;
-    doc.companyInfo.logo = imageUrl;
-  }
-};
-
-jobAdSchema.post("init", function (doc) {
-  setImageURL(doc as IJobs);
-});
-
-jobAdSchema.post("save", function (doc) {
-  setImageURL(doc as IJobs);
-});
 
 const JobModel: Model<IJobs> = mongoose.model<IJobs>(
   "jobAdvertisement",

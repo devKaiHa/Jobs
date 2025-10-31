@@ -16,6 +16,7 @@ const {
   signupJobSeekers,
   verifyPasswordResetCodeJobSeekers,
   verifyEmailJobSeekers,
+  googleLogin,
 } = require("../services/jobSeekersAuthService");
 
 const router = express.Router();
@@ -33,6 +34,8 @@ router.post(
   "/verifyPasswordResetCodeSeekers",
   verifyPasswordResetCodeJobSeekers
 );
+router.post("/googleLogin", googleLogin);
+
 router.post("/forgotPasswordSeekers", forgotPasswordJobSeekers);
 router.post("/signupSeekers", signupJobSeekers);
 router.post("/verifyEmailJobSeekers", verifyEmailJobSeekers);

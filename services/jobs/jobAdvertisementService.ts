@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import ApiError from "../../utils/apiError";
 import jobsModel from "../../models/jobs/jobAdvertisementModel";
+import jobsCompanies from "../../models/jobs/jobsCompaniesModel";
 import multer from "multer";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
@@ -48,6 +49,10 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
     ];
   }
 
+  if (req.query.companyId) {
+    query.companyId = req.query.companyId;
+  }
+
   const page = parseInt(req.query.page as string, 10) || 1;
   const limit = parseInt(req.query.limit as string, 10) || 10;
   const skip = (page - 1) * limit;
@@ -59,7 +64,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })
-    ;
+    .populate("companyId", "name  email");
 
   res.status(200).json({
     status: "success",
@@ -74,8 +79,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
 export const getOneJob = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const job = await jobsModel.findById(id)
-   
+    const job = await jobsModel.findById(id);
 
     if (!job) {
       return next(new ApiError(`No job found for this ID: ${id}`, 404));

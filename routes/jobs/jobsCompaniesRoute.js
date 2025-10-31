@@ -2,8 +2,8 @@ const express = require("express");
 const authService = require("../../services/employeeAuthService");
 const {
   getCompanies,
-  uploadCompaniesImage,
-  resizerCompanyImage,
+  processCompanyFiles,
+  uploadCompanyFiles,
   createCompany,
   getCompany,
   updateCompany,
@@ -17,8 +17,8 @@ jobsCompaniesRoute
   .get(getCompanies)
   .post(
     authService.protect,
-    uploadCompaniesImage,
-    resizerCompanyImage,
+    uploadCompanyFiles,
+    processCompanyFiles,
     createCompany
   );
 
@@ -27,8 +27,8 @@ jobsCompaniesRoute
   .get(getCompany)
   .put(
     authService.protect,
-    uploadCompaniesImage,
-    resizerCompanyImage,
+    uploadCompanyFiles,
+    processCompanyFiles,
     updateCompany
   )
   .patch(authService.protect, deleteCompany);

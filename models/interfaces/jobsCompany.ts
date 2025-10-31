@@ -12,6 +12,5 @@ export interface IJobsCompany extends Document {
   verified?: boolean;
   jobs?: mongoose.Types.ObjectId[];
   files?: Array<{ key: string; fileUrl: string }>;
-  createdBy?: mongoose.Types.ObjectId;
   isActive?: boolean;
 }

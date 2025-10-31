@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, ObjectId } from "mongoose";
 
 export interface ICompanyInfo {
   name?: string;
@@ -19,7 +19,7 @@ export interface IJobs extends Document {
   skills?: string[];
   companyInfo?: ICompanyInfo;
   status?: boolean;
-  companyId?: string;
+  companyId?: ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -6,41 +6,78 @@ import slugify from "slugify";
 import multer, { FileFilterCallback } from "multer";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
+import fs from "fs";
+import path from "path";
 import { IJobsCompany } from "../../models/interfaces/jobsCompany";
 
-// Multer Config
+
 const multerStorage = multer.memoryStorage();
-const multerFilter = (
+const logoFilter = (
   req: Request,
   file: Express.Multer.File,
   cb: FileFilterCallback
 ): void => {
-  if (file.mimetype.startsWith("image")) {
-    cb(null, true);
+  if (file.fieldname === "logo") {
+    if (file.mimetype.startsWith("image")) {
+      cb(null, true);
+    } else {
+      cb(new ApiError("Logo must be an image", 400));
+    }
   } else {
-    cb(new ApiError("Only images allowed", 400));
+    cb(null, true);
   }
 };
-const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
-export const uploadCompaniesImage = upload.single("image");
-export const resizerCompanyImage = asyncHandler(
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: logoFilter,
+  limits: { fileSize: 20 * 1024 * 1024 }, 
+});
+
+export const uploadCompanyFiles = upload.fields([
+  { name: "logo", maxCount: 1 },
+  { name: "files", maxCount: 5 },
+]);
+
+export const processCompanyFiles = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const filename = `company-${uuidv4()}-${Date.now()}.png`;
+    const filesField = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
 
-    if (req.file) {
-      await sharp(req.file.buffer)
+    if (filesField && filesField.logo && filesField.logo[0]) {
+      const logoFile = filesField.logo[0];
+      const filename = `company-logo-${uuidv4()}-${Date.now()}.png`;
+
+      await sharp(logoFile.buffer)
         .toFormat("png")
-        .png({ quality: 50 })
-        .toFile(`uploads/jobs/${filename}`);
+        .png({ quality: 70 })
+        .toFile(`uploads/jobCompanies/${filename}`);
 
-      req.body.image = filename;
+      req.body.logo = filename;
+    }
+
+    if (filesField && filesField.files && filesField.files.length > 0) {
+      const uploadDir = "uploads/jobCompanies/files";
+      const savedFileNames: string[] = [];
+
+      for (const file of filesField.files) {
+        const ext = path.extname(file.originalname);
+        const filename = `company-file-${uuidv4()}-${Date.now()}${ext}`;
+        const filePath = path.join(uploadDir, filename);
+
+        fs.writeFileSync(filePath, file.buffer);
+        savedFileNames.push(filename);
+      }
+
+      req.body.files = savedFileNames;
     }
 
     next();
   }
 );
 
-// Get All Companies
+// =================== GET ALL COMPANIES ===================
 export const getCompanies = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const pageSize = parseInt(req.query.limit as string) || 10;
@@ -53,12 +90,7 @@ export const getCompanies = asyncHandler(
         { name: { $regex: req.query.keyword as string, $options: "i" } },
       ];
     }
-    console.log(`req.query.isNewCompany`, req.query.isNewCompany);
 
-    if (req.query.isNewCompany !== undefined) {
-      const isNewCompany = req.query.isNewCompany == "true";
-      query.isNewCompany = isNewCompany;
-    }
 
     const totalItems = await JobsCompany.countDocuments(query);
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -77,20 +109,21 @@ export const getCompanies = asyncHandler(
   }
 );
 
-// Create Company
+// =================== CREATE COMPANY ===================
 export const createCompany = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     req.body.slug = slugify(req.body.name);
+
     const company: IJobsCompany = await JobsCompany.create(req.body);
     res.status(201).json({
       status: "success",
-      message: "Company inserted",
+      message: "Company created successfully",
       data: company,
     });
   }
 );
 
-// Get Specific Company
+// =================== GET SPECIFIC COMPANY ===================
 export const getCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -104,7 +137,7 @@ export const getCompany = asyncHandler(
   }
 );
 
-// Update Company
+// =================== UPDATE COMPANY ===================
 export const updateCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -119,13 +152,13 @@ export const updateCompany = asyncHandler(
 
     res.status(200).json({
       status: "success",
-      message: "Company updated",
+      message: "Company updated successfully",
       data: company,
     });
   }
 );
 
-// Delete (Toggle Active)
+// =================== TOGGLE ACTIVE STATUS ===================
 export const deleteCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;

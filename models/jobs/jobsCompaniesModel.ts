@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { IJobsCompany } from "../interfaces/jobsCompany";
 
-const jobsCompanyModel = new mongoose.Schema(
+const jobCompanyModel = new mongoose.Schema(
   {
     name: String,
     slug: String,
@@ -12,26 +12,37 @@ const jobsCompanyModel = new mongoose.Schema(
     description: String,
     logo: String,
     verified: { type: Boolean, default: false },
-    jobs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Job" }],
-    files: {
-      type: [
-        {
-          key: { type: String, required: true },
-          fileUrl: { type: String, required: true },
-        },
-      ],
-      default: [],
-      _id: false,
-    },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "JobsUser" },
+    jobAdvertisement: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "jobAdvertisement" },
+    ],
+    files: [String],
     isActive: { type: Boolean, default: false },
-    isNewCompany: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
+const setImageURL = (doc: any) => {
+  if (doc.logo) {
+    doc.logo = `${process.env.BASE_URL}/jobCompanies/${doc.logo}`;
+  }
+  if (doc.files && doc.files.length > 0) {
+    doc.files = doc.files.map((file: string) => {
+      return `${process.env.BASE_URL}/jobCompanies/${file}`;
+    });
+  }
+};
+
+jobCompanyModel.post("init", function (doc) {
+  setImageURL(doc);
+});
+
+jobCompanyModel.post("save", function (doc) {
+  setImageURL(doc);
+});
+
 const JobsCompany = mongoose.model<IJobsCompany>(
-  "JobsCompany",
-  jobsCompanyModel
+  "jobCompanies",
+  jobCompanyModel
 );
+
 export default JobsCompany;

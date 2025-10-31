@@ -6,6 +6,7 @@ import ApiError from "../utils/apiError";
 import createToken from "../utils/createToken";
 import JobSeekers from "../models/jobSeekersModel";
 import sendEmail from "../utils/sendEmail";
+import { OAuth2Client } from "google-auth-library";
 
 // ====== Interfaces ======
 interface SignupRequest extends Request {
@@ -35,6 +36,11 @@ interface ForgotPasswordRequest extends Request {
     email: string;
   };
 }
+interface googleLoginRequest extends Request {
+  body: {
+    token: string;
+  };
+}
 
 interface ResetCodeRequest extends Request {
   body: {
@@ -49,6 +55,45 @@ interface ResetPasswordRequest extends Request {
     newPassword: string;
   };
 }
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleLogin = asyncHandler(
+  async (req: googleLoginRequest, res: Response, next: NextFunction) => {
+    const { token } = req.body;
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) return next(new ApiError("Google token not valid", 400));
+
+    const { email, name, picture } = payload;
+
+    let jobSeeker = await JobSeekers.findOne({ email });
+
+    if (!jobSeeker) {
+      jobSeeker = await JobSeekers.create({
+        name,
+        email,
+        verified: true,
+        profileImage: picture,
+        password: Math.random().toString(36).slice(-8),
+      });
+    }
+
+    const jwtToken = createToken(jobSeeker._id);
+
+    res.status(200).json({
+      status: "success",
+      message: "Logged in with Google successfully",
+      jobSeeker,
+      token: jwtToken,
+    });
+  }
+);
 
 // ====== Signup (with Email Verification) ======
 export const signupJobSeekers = asyncHandler(
@@ -71,9 +116,9 @@ export const signupJobSeekers = asyncHandler(
       name,
       email,
       password: hashedPassword,
-      active: false, // Not verified yet
+      active: false,
       emailVerificationCode: hashedVerificationCode,
-      emailVerificationExpires: Date.now() + 10 * 60 * 1000, // 10 mins
+      emailVerificationExpires: Date.now() + 10 * 60 * 1000,
     });
 
     // Send verification email
@@ -89,6 +134,8 @@ export const signupJobSeekers = asyncHandler(
       status: "pending",
       message:
         "Verification code sent to your email. Please verify to activate your account.",
+      user: newJobSeeker,
+      role: "job_seeker",
     });
   }
 );
@@ -117,7 +164,6 @@ export const verifyEmailJobSeekers = asyncHandler(
     jobSeeker.emailVerificationCode = undefined;
     jobSeeker.emailVerificationExpires = undefined;
     await jobSeeker.save();
-
 
     res.status(200).json({
       status: "success",
