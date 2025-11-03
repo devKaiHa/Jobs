@@ -80,7 +80,9 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
 export const getOneJob = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const job = await jobsModel.findById(id);
+    const job = await jobsModel
+      .findById(id)
+      .populate("companyId");
 
     if (!job) {
       return next(new ApiError(`No job found for this ID: ${id}`, 404));
