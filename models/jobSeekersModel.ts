@@ -24,7 +24,10 @@ const jobSeekersSchema = new mongoose.Schema(
     emailVerificationCode: String,
     emailVerificationExpires: Number,
     resetCodeVerified: Boolean,
-
+    bio: String,
+    education: String,
+    pecialization: String,
+    experience: Number,
     archives: {
       type: String,
       enum: ["true", "false"],
@@ -33,7 +36,7 @@ const jobSeekersSchema = new mongoose.Schema(
     city: String,
     birthDate: Date,
     skills: [String],
-    licenses: [String],
+    licenses: String,
     country: String,
     phone: String,
     verified: { type: Boolean, default: false },
@@ -45,15 +48,24 @@ const jobSeekersSchema = new mongoose.Schema(
       enum: ["Male", "Female", "Other"],
       default: "Other",
     },
+    favorite: [String],
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
 const setImageURL = (doc: any) => {
-  if (doc.image) {
-    const imageUrl = `${process.env.BASE_URL}/Image/${doc.image}`;
-    doc.image = imageUrl;
+  if (doc.profileImage) {
+    const imageUrl = `${process.env.BASE_URL}/jobSeekers/${doc.profileImage}`;
+    doc.profileImage = imageUrl;
+  }
+  if (doc.cv) {
+    const cvUrl = `${process.env.BASE_URL}/cv/${doc.cv}`;
+    doc.cv = cvUrl;
+  }
+  if (doc.licenses) {
+    const licensesUrl = `${process.env.BASE_URL}/licenses/${doc.licenses}`;
+    doc.licenses = licensesUrl;
   }
 };
 

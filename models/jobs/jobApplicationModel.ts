@@ -14,11 +14,10 @@ const jobApplicationSchema = new Schema<IJobApplication>(
       default: "pending",
     },
     appliedAt: { type: Date, default: Date.now },
-    resume: String,
     coverLetter: String,
-    notes: String,
     interviewDate: Date,
     feedback: String,
+    cv: String,
   },
   { timestamps: true }
 );

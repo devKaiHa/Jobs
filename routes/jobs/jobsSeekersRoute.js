@@ -6,8 +6,8 @@ const {
   updateJobUser,
   deleteJobUser,
   getJobUsers,
-  resizeUserImage,
-  uploadJobUserImage,
+  processJobUserFiles,
+  uploadJobUserFiles,
   createJobUser,
 } = require("../../services/jobs/jobSeekersService");
 
@@ -18,8 +18,8 @@ jobsUsersRoute
   .get(getJobUsers)
   .post(
     authService.protect,
-    uploadJobUserImage,
-    resizeUserImage,
+    uploadJobUserFiles,
+    processJobUserFiles,
     createJobUser
   );
 
@@ -28,8 +28,8 @@ jobsUsersRoute
   .get(getJobUser)
   .put(
     authService.protect,
-    uploadJobUserImage,
-    resizeUserImage,
+    uploadJobUserFiles,
+    processJobUserFiles,
     updateJobUser
   )
   .delete(authService.protect, deleteJobUser);

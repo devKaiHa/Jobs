@@ -6,13 +6,17 @@ import ApiError from "../utils/apiError";
 import createToken from "../utils/createToken";
 import Employee from "../models/employeeModel";
 import { IEmployee } from "../models/interfaces/employee";
+import sendEmail from "../utils/sendEmail";
+import isEmail from "../utils/tools/isEmail";
+import generatePassword from "../utils/tools/generatePassword";
+import { Document, Types } from "mongoose";
 
 // ====== Interfaces ======
 interface LoginRequest extends Request {
   body: { email: string; password: string };
 }
 
-interface SignupRequest extends Request {
+interface createEmployeeRequest extends Request {
   body: { name: string; email: string; password: string };
 }
 
@@ -31,37 +35,82 @@ interface ResetCodeRequest extends Request {
 interface ResetPasswordRequest extends Request {
   body: { email: string; newPassword: string };
 }
+interface reSendPasswordRequest extends Request {
+  body: { email: string; password: string };
+}
 
-// ====== Signup (Admin) ======
-export const signup = asyncHandler(
-  async (req: SignupRequest, res: Response, next: NextFunction) => {
-    const { name, email, password } = req.body;
+export const createEmployee = asyncHandler(
+  async (req: createEmployeeRequest, res, next) => {
+    const email = req.body.email;
+    const name = req.body.name; 
 
-    // Check if email already exists
-    const existingUser = await Employee.findOne({ email });
-    if (existingUser)
-      return next(new ApiError("Email already registered", 400));
+    const findEmployee = await Employee.findOne({ email });
+    //Check if the email format is true or not
+    if (isEmail(email)) {
+      //Generate Password
+      const employeePass = generatePassword();
+      let employee: Document<unknown, {}, IEmployee> &
+        IEmployee & { _id: Types.ObjectId };
+      //Send password to email
+      if (!findEmployee) {
+        req.body.password = await bcrypt.hash(employeePass, 12);
+        await sendEmail({
+          email: req.body.email,
+          subject: "New Password",
+          message: `Hello ${req.body.name}, Your password is ${employeePass}`,
+        });
+        employee = await Employee.create(req.body);
+      } else {
+        return res.status(400).json({
+          status: false,
+          message: "Employee already exists",
+        });
+      }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+      res.status(201).json({
+        status: "true",
+        message: "Employee Inserted",
+        data: employee,
+      });
+    } else {
+      return next(new ApiError("There is an error in email format", 500));
+    }
+  }
+);
 
-    // Create new admin
-    const newEmployee = await Employee.create({
-      name,
-      email,
-      password: hashedPassword,
-      active: true,
-      role: "admin",
-    });
+export const reSendPassword = asyncHandler(
+  async (req: reSendPasswordRequest, res, next) => {
+    const email = req.body.email;
 
-    // Generate token for immediate login
-    newEmployee.password = undefined;
+    //Check if the email format is true or not
 
-    res.status(201).json({
-      status: "success",
-      message: "Admin registered successfully",
-      data: newEmployee,
-    });
+    const findEmployee = await Employee.findOne({ email: req.body.email });
+    try {
+      //Generate Password
+      const employeePass = generatePassword();
+      const hashedPassword = await bcrypt.hash(employeePass, 12);
+
+      req.body.password = hashedPassword;
+      //Sned password to email
+      await sendEmail({
+        email: req.body.email,
+        subject: "New Password",
+        message: `Hello ${findEmployee.name}, Your password is ${employeePass}`,
+      });
+      const employee = await Employee.findOneAndUpdate(
+        { email: email },
+        { password: hashedPassword },
+        { new: true }
+      );
+
+      res.status(201).json({
+        status: 200,
+        message: "Employee Update Password",
+        data: employee,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 );
 

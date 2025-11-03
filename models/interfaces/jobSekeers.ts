@@ -13,6 +13,10 @@ export interface IUser extends Document {
   resetCodeVerified?: boolean;
   archives?: "true" | "false";
   city?: string;
+  bio?: string;
+  education?: string;
+  pecialization?: string;
+  experience?: number;
   birthDate?: Date;
   skills?: string[];
   licenses?: string[];

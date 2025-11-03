@@ -5,9 +5,9 @@ export interface IJobApplication extends Document {
   jobId: mongoose.Types.ObjectId;
   status: "pending" | "reviewed" | "accepted" | "rejected";
   appliedAt: Date;
-  resume?: string;
   coverLetter?: string;
   notes?: string;
+  cv?: string;
   interviewDate?: Date;
   feedback?: string;
 }

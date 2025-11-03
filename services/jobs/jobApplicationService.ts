@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import ApiError from "../../utils/apiError";
 import jobApplicationModel from "../../models/jobs/jobApplicationModel";
+import jobSeekersModel from "../../models/jobSeekersModel";
 
 export const getAllJobApplications = asyncHandler(
   async (req: Request, res: Response) => {
@@ -56,11 +57,22 @@ export const getOneJobApplication = asyncHandler(
 );
 
 export const createJobApplication = asyncHandler(
-  async (req: Request, res: Response) => {
-    const Applications = await jobApplicationModel.create(req.body);
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { jobSeekerId, jobId } = req.body;
+    const jobSeeker = await jobSeekersModel.findById(jobSeekerId);
+    if (!jobSeeker || !jobId ) {
+      return next(new ApiError("Job seeker or jobId not found", 404));
+    }
+    const applicationData = {
+      ...req.body,
+      cv: jobSeeker.cv,
+    };
+
+    const Applications = await jobApplicationModel.create(applicationData);
     res.status(201).json({ status: "success", data: Applications });
   }
 );
+
 export const updateJobApplication = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
