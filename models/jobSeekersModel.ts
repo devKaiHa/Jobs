@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { IUser } from "./interfaces/jobSekeers";
+import { IJobSeeker } from "./interfaces/jobSekeers";
 
 const jobSeekersSchema = new mongoose.Schema(
   {
@@ -77,5 +77,5 @@ jobSeekersSchema.post("save", (doc: any) => {
   setImageURL(doc);
 });
 
-const JobSeekers = mongoose.model<IUser>("jobSeekers", jobSeekersSchema);
+const JobSeekers = mongoose.model<IJobSeeker>("jobSeekers", jobSeekersSchema);
 export default JobSeekers;

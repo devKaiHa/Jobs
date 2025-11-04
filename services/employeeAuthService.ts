@@ -49,7 +49,8 @@ const multerFilter = (req: any, file: Express.Multer.File, cb: any) => {
   if (
     file.mimetype === "image/jpeg" ||
     file.mimetype === "image/png" ||
-    file.mimetype === "image/jpg"
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/webp"
   ) {
     cb(null, true);
   } else {
@@ -92,6 +93,7 @@ export const createEmployee = asyncHandler(
       const employeePass = generatePassword();
       let employee: Document<unknown, {}, IEmployee> &
         IEmployee & { _id: Types.ObjectId };
+  
       //Send password to email
       if (!findEmployee) {
         req.body.password = await bcrypt.hash(employeePass, 12);
@@ -102,7 +104,7 @@ export const createEmployee = asyncHandler(
         });
         employee = await Employee.create(req.body);
       } else {
-        return res.status(400).json({
+         res.status(400).json({
           status: false,
           message: "Employee already exists",
         });
@@ -125,9 +127,9 @@ export const reSendPassword = asyncHandler(
 
     //Check if the email format is true or not
 
-    const findEmployee = await Employee.findOne({ email: req.body.email });
+    const findEmployee = await Employee.findOne({ email: req.body.email });  
     if (!findEmployee) {
-      return res.status(400).json({
+       res.status(400).json({
         status: false,
         message: "Email not found",
       });
