@@ -42,7 +42,7 @@ interface reSendPasswordRequest extends Request {
 export const createEmployee = asyncHandler(
   async (req: createEmployeeRequest, res, next) => {
     const email = req.body.email;
-    const name = req.body.name; 
+    const name = req.body.name;
 
     const findEmployee = await Employee.findOne({ email });
     //Check if the email format is true or not
@@ -85,6 +85,13 @@ export const reSendPassword = asyncHandler(
     //Check if the email format is true or not
 
     const findEmployee = await Employee.findOne({ email: req.body.email });
+    if (!findEmployee) {
+      return res.status(400).json({
+        status: false,
+        message: "Email not found",
+      });
+    }
+
     try {
       //Generate Password
       const employeePass = generatePassword();

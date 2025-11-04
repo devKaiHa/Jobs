@@ -7,6 +7,7 @@ import createToken from "../utils/createToken";
 import JobSeekers from "../models/jobSeekersModel";
 import sendEmail from "../utils/sendEmail";
 import { OAuth2Client } from "google-auth-library";
+import { IJobSeeker } from "../models/interfaces/jobSekeers";
 
 // ====== Interfaces ======
 interface SignupRequest extends Request {
@@ -55,6 +56,9 @@ interface ResetPasswordRequest extends Request {
     newPassword: string;
   };
 }
+interface AuthenticatedRequest extends Request {
+  user?: IJobSeeker;
+}
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -92,6 +96,37 @@ export const googleLogin = asyncHandler(
       jobSeeker,
       token: jwtToken,
     });
+  }
+);
+
+export const protect = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    let token: string | undefined;
+
+    if (req.headers.authorization?.startsWith("Bearer")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) return next(new ApiError("Not logged in", 401));
+
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET_KEY as string
+      ) as { userId: string };
+
+      const currentUser = await JobSeekers.findById(decoded.userId);
+      if (!currentUser)
+        return next(new ApiError("Employee does not exist", 404));
+
+      req.user = currentUser;
+      next();
+    } catch (error: any) {
+      if (error.name === "TokenExpiredError")
+        return next(new ApiError("Token has expired", 401));
+
+      return next(new ApiError("Not logged in", 401));
+    }
   }
 );
 

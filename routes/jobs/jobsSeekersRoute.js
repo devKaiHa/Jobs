@@ -1,7 +1,6 @@
 const express = require("express");
-const authService = require("../../services/employeeAuthService");
+const authService = require("../../services/jobSeekersAuthService");
 const {
-  resizerUserImage,
   getJobUser,
   updateJobUser,
   deleteJobUser,
