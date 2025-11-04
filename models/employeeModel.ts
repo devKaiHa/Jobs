@@ -40,7 +40,7 @@ const emoloyeeShcema = new mongoose.Schema(
 
     image: String,
   },
-  { timestamps: true }
+  { timestamps: true } 
 );
 
 const setImageURL = (doc: any) => {

@@ -1,48 +1,23 @@
 const express = require("express");
+const authService = require(".././services/employeeAuthService");
 const {
-  getEmployees,
-  createEmployee,
   deleteEmployee,
   getEmployee,
+  getEmployees,
   updateEmployee,
-  updateEmployeePassword,
-  uploadEmployeeImage,
-  resizerEmployeeImage,
-  reSendPassword,
-} = require("../services/employeeServices");
-const {
-  getEmployeeVlaidator,
-  deleteEmployeeVlaidator,
-  updatePasswordValidator,
-} = require("../utils/validators/employeeValidator");
-const authService = require("../services/employeeAuthService");
+} = require(".././services/employeeService");
 
-const employeeRoute = express.Router();
+const jobsUsersRoute = express.Router();
 
-employeeRoute
-  .route("/")
-  .get(getEmployees)
-  .post(uploadEmployeeImage, resizerEmployeeImage, createEmployee);
-employeeRoute
-  .route("/resendpassword/:email")
-  .put(authService.protect, reSendPassword);
-employeeRoute.route("/create-employee").post(createEmployee);
+jobsUsersRoute.route("/").get(getEmployees);
 
-employeeRoute
+jobsUsersRoute
   .route("/:id")
-  .delete(authService.protect, deleteEmployeeVlaidator, deleteEmployee)
-  .get(authService.protect, getEmployeeVlaidator, getEmployee)
+  .get(getEmployee)
   .put(
     authService.protect,
-    uploadEmployeeImage,
-    resizerEmployeeImage,
     updateEmployee
-  );
-employeeRoute
-  .route("/updateName/:id")
-  .put(authService.protect, /*updateNameValidator, */ updateEmployee);
-employeeRoute
-  .route("/updatePassword/:id")
-  .put(authService.protect, updatePasswordValidator, updateEmployeePassword);
+  )
+  .delete(authService.protect, deleteEmployee);
 
-module.exports = employeeRoute;
+module.exports = jobsUsersRoute;
