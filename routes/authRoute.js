@@ -7,10 +7,10 @@ const {
   resetPasswordPos,
   verifyPasswordResetCodePos,
   forgotPassword,
-  signup,
-  protect,
   createEmployee,
   reSendPassword,
+  processEmployeeImage,
+  uploadEmployeeImage,
 } = require("../services/employeeAuthService");
 const {
   forgotPasswordJobSeekers,
@@ -29,7 +29,12 @@ const router = express.Router();
 router.post("/login", upload.none(), login);
 router.post("/verifyresetcodepos", verifyPasswordResetCodePos);
 router.post("/forgotPassword", forgotPassword);
-router.post("/createEmployee", createEmployee);
+router.post(
+  "/createEmployee",
+  uploadEmployeeImage,
+  processEmployeeImage,
+  createEmployee
+);
 router.post("/reSendPassword", reSendPassword);
 router.put("/resetpasswordpos", upload.none(), resetPasswordPos);
 

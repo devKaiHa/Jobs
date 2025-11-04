@@ -7,6 +7,11 @@ const {
   updateEmployee,
 } = require(".././services/employeeService");
 
+const {
+  uploadEmployeeImage,
+  processEmployeeImage,
+} = require("../services/employeeAuthService.ts");
+
 const jobsUsersRoute = express.Router();
 
 jobsUsersRoute.route("/").get(getEmployees);
@@ -16,6 +21,8 @@ jobsUsersRoute
   .get(getEmployee)
   .put(
     authService.protect,
+    uploadEmployeeImage,
+    processEmployeeImage,
     updateEmployee
   )
   .delete(authService.protect, deleteEmployee);

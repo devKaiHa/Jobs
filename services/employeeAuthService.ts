@@ -14,8 +14,6 @@ import multer from "multer";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 
-
-
 // ====== Interfaces ======
 interface LoginRequest extends Request {
   body: { email: string; password: string };
@@ -44,7 +42,6 @@ interface reSendPasswordRequest extends Request {
   body: { email: string; password: string };
 }
 
-
 const multerStorage = multer.memoryStorage();
 
 // image filter
@@ -61,11 +58,11 @@ const multerFilter = (req: any, file: Express.Multer.File, cb: any) => {
 };
 
 const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
-export const uploadJobUserFiles = upload.fields([
+export const uploadEmployeeImage = upload.fields([
   { name: "image", maxCount: 1 },
 ]);
 
-export const processJobUserFiles = asyncHandler(
+export const processEmployeeImage = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     if (req.files && (req.files as any).image) {
       const imageFile = (req.files as any).image[0];
@@ -84,7 +81,7 @@ export const processJobUserFiles = asyncHandler(
 );
 
 export const createEmployee = asyncHandler(
-  async (req: createEmployeeRequest, res, next) => {
+  async (req: createEmployeeRequest, res: Response, next: NextFunction) => {
     const email = req.body.email;
     const name = req.body.name;
 
@@ -123,7 +120,7 @@ export const createEmployee = asyncHandler(
 );
 
 export const reSendPassword = asyncHandler(
-  async (req: reSendPasswordRequest, res, next) => {
+  async (req: reSendPasswordRequest, res: Response, next: NextFunction) => {
     const email = req.body.email;
 
     //Check if the email format is true or not

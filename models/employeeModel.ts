@@ -45,7 +45,7 @@ const emoloyeeShcema = new mongoose.Schema(
 
 const setImageURL = (doc: any) => {
   if (doc.image) {
-    const imageUrl = `${process.env.BASE_URL}/Image/${doc.image}`;
+    const imageUrl = `${process.env.BASE_URL}/employee/${doc.image}`;
     doc.image = imageUrl;
   }
 };
