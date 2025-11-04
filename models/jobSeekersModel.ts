@@ -26,7 +26,7 @@ const jobSeekersSchema = new mongoose.Schema(
     resetCodeVerified: Boolean,
     bio: String,
     education: String,
-    pecialization: String,
+    specialization: String,
     experience: Number,
     archives: {
       type: String,
