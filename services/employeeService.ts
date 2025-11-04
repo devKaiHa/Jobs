@@ -124,17 +124,11 @@ export const deleteEmployee: AsyncHandler = asyncHandler(
   async (req: EmployeeRequest, res, next) => {
     const { id } = req.params;
 
-    const employeeToUpdate = await Employee.findById(id);
+    const employeeToDelete = await Employee.findByIdAndDelete(id);
 
-    if (!employeeToUpdate) {
+    if (!employeeToDelete) {
       return next(new ApiError(`No employee by this id ${id}`, 404));
     }
-
-    const employee = await Employee.findOneAndUpdate(
-      { _id: id },
-      { active: !employeeToUpdate.active },
-      { new: true }
-    );
 
     res.status(200).json({ status: "true", message: "Employee Deleted" });
   }

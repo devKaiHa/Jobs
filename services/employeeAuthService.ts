@@ -10,6 +10,11 @@ import sendEmail from "../utils/sendEmail";
 import isEmail from "../utils/tools/isEmail";
 import generatePassword from "../utils/tools/generatePassword";
 import { Document, Types } from "mongoose";
+import multer from "multer";
+import sharp from "sharp";
+import { v4 as uuidv4 } from "uuid";
+
+
 
 // ====== Interfaces ======
 interface LoginRequest extends Request {
@@ -17,7 +22,7 @@ interface LoginRequest extends Request {
 }
 
 interface createEmployeeRequest extends Request {
-  body: { name: string; email: string; password: string };
+  body: { name: string; email: string; password?: string };
 }
 
 interface AuthenticatedRequest extends Request {
@@ -38,6 +43,45 @@ interface ResetPasswordRequest extends Request {
 interface reSendPasswordRequest extends Request {
   body: { email: string; password: string };
 }
+
+
+const multerStorage = multer.memoryStorage();
+
+// image filter
+const multerFilter = (req: any, file: Express.Multer.File, cb: any) => {
+  if (
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only images are allowed"), false);
+  }
+};
+
+const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
+export const uploadJobUserFiles = upload.fields([
+  { name: "image", maxCount: 1 },
+]);
+
+export const processJobUserFiles = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    if (req.files && (req.files as any).image) {
+      const imageFile = (req.files as any).image[0];
+      const imageFilename = `image-${uuidv4()}-${Date.now()}.png`;
+
+      await sharp(imageFile.buffer)
+        .toFormat("png")
+        .png({ quality: 70 })
+        .toFile(`uploads/employee/${imageFilename}`);
+
+      req.body.image = imageFilename;
+    }
+
+    next();
+  }
+);
 
 export const createEmployee = asyncHandler(
   async (req: createEmployeeRequest, res, next) => {
