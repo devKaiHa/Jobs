@@ -157,11 +157,11 @@ export const signupJobSeekers = asyncHandler(
     });
 
     // Send verification email
-    const message = `Hello ${name},\n\nYour email verification code is: ${verificationCode}\nThis code will expire in 10 minutes.\n\nThank you,\nSmartPOS Team`;
+    const message = `Hello ${name},\n\nYour email verification code is: ${verificationCode}\nThis code will expire in 10 minutes.\n\nThank you,\nLinkedOut Team`;
 
     await sendEmail({
       email,
-      subject: "Verify your email - SmartPOS",
+      subject: "Verify your email - LinkedOut",
       message,
     });
 
@@ -253,11 +253,11 @@ export const forgotPasswordJobSeekers = asyncHandler(
 
     await jobSeeker.save();
 
-    const message = `Hello ${jobSeeker.name},\n\nYour password reset code is: ${resetCode}\nThis code will expire in 10 minutes.\n\nSmartPOS Team`;
+    const message = `Hello ${jobSeeker.name},\n\nYour password reset code is: ${resetCode}\nThis code will expire in 10 minutes.\n\nLinkedOut Team`;
 
     await sendEmail({
       email: jobSeeker.email,
-      subject: "SmartPOS Password Reset Code",
+      subject: "LinkedOut Password Reset Code",
       message,
     });
 
