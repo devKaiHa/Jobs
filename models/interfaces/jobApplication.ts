@@ -7,7 +7,6 @@ export interface IJobApplication extends Document {
   appliedAt: Date;
   coverLetter?: string;
   notes?: string;
-  cv?: string;
   interviewDate?: Date;
   feedback?: string;
 }

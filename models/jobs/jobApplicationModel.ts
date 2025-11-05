@@ -13,11 +13,9 @@ const jobApplicationSchema = new Schema<IJobApplication>(
       type: String,
       default: "pending",
     },
-    appliedAt: { type: Date, default: Date.now },
     coverLetter: String,
     interviewDate: Date,
     feedback: String,
-    cv: String,
   },
   { timestamps: true }
 );

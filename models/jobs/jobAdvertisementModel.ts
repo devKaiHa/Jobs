@@ -12,8 +12,10 @@ const jobAdSchema = new Schema<IJobs>(
     qualifications: [{ type: String }],
     endDate: { type: String },
     skills: [{ type: String }],
-    companyId: { type: Schema.Types.ObjectId, ref: "jobCompanies" },
+    company: { type: Schema.Types.ObjectId, ref: "jobCompanies" },
+    companyId: String,
     status: { type: Boolean },
+    applicantsNumber: String,
   },
   { timestamps: true }
 );

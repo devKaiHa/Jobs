@@ -25,7 +25,9 @@ export const getAllJobApplications = asyncHandler(
       .find(query)
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .populate("jobSeekerId")
+      .populate("jobId");
 
     res.status(200).json({
       status: "success",
@@ -63,10 +65,7 @@ export const createJobApplication = asyncHandler(
     if (!jobSeeker || !jobId) {
       return next(new ApiError("Job seeker or jobId not found", 404));
     }
-    const applicationData = {
-      ...req.body,
-      cv: jobSeeker.cv,
-    };
+    const applicationData = req.body;
 
     const Applications = await jobApplicationModel.create(applicationData);
     res.status(201).json({ status: "success", data: Applications });

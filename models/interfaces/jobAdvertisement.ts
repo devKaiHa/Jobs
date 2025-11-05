@@ -1,12 +1,5 @@
 import { Document, ObjectId } from "mongoose";
 
-export interface ICompanyInfo {
-  name?: string;
-  logo?: string;
-  location?: string;
-  email?: string;
-}
-
 export interface IJobs extends Document {
   jobTitle?: string;
   type?: string;
@@ -17,9 +10,10 @@ export interface IJobs extends Document {
   qualifications?: string[];
   endDate?: string;
   skills?: string[];
-  companyInfo?: ICompanyInfo;
+  company?: ObjectId;
   status?: boolean;
-  companyId?: ObjectId;
+  companyId?: String;
+  applicantsNumber?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

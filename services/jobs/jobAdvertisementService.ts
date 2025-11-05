@@ -53,6 +53,12 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
   if (req.query.companyId) {
     query.companyId = req.query.companyId;
   }
+  if (req.query.status) {
+    query.status = req.query.status;
+  }
+  if (req.query.endDate) {
+    query.endDate = req.query.endDate;
+  }
 
   const page = parseInt(req.query.page as string, 10) || 1;
   const limit = parseInt(req.query.limit as string, 10) || 10;
@@ -65,7 +71,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })
-    .populate("companyId", "name  email");
+    .populate("company", "name  email");
 
   res.status(200).json({
     status: "success",
@@ -80,9 +86,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
 export const getOneJob = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const job = await jobsModel
-      .findById(id)
-      .populate("companyId");
+    const job = await jobsModel.findById(id).populate("company");
 
     if (!job) {
       return next(new ApiError(`No job found for this ID: ${id}`, 404));
