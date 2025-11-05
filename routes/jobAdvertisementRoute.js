@@ -21,6 +21,6 @@ jobRoute
   .route("/:id")
   .get(getOneJob)
   .put(authService.protect, uploadCompanyLogo, resizeCompanyLogo, updateJob)
-  .delete(deleteJob);
+  .delete(authService.protect, deleteJob);
 
 module.exports = jobRoute;
