@@ -8,6 +8,9 @@ import JobSeekers from "../models/jobSeekersModel";
 import sendEmail from "../utils/sendEmail";
 import { OAuth2Client } from "google-auth-library";
 import { IJobSeeker } from "../models/interfaces/jobSekeers";
+import multer from "multer";
+import sharp from "sharp";
+import { v4 as uuidv4 } from "uuid";
 
 // ====== Interfaces ======
 interface SignupRequest extends Request {
@@ -59,6 +62,73 @@ interface ResetPasswordRequest extends Request {
 interface AuthenticatedRequest extends Request {
   user?: IJobSeeker;
 }
+
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (req: Request, file: Express.Multer.File, cb: any) => {
+  if (
+    file.mimetype.startsWith("image") ||
+    file.mimetype === "application/pdf" ||
+    file.mimetype ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    file.mimetype === "application/msword"
+  ) {
+    cb(null, true);
+  } else {
+    cb(new ApiError("Only images or CV files are allowed", 400), false);
+  }
+};
+
+const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
+
+export const uploadJobSeekerFiles = upload.fields([
+  { name: "profileImage", maxCount: 1 },
+  { name: "cv", maxCount: 1 },
+  { name: "licenses", maxCount: 1 },
+]);
+
+export const processJobSeekerFiles = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    if (req.files && (req.files as any).profileImage) {
+      const imageFile = (req.files as any).profileImage[0];
+      const imageFilename = `profileImage-${uuidv4()}-${Date.now()}.png`;
+
+      await sharp(imageFile.buffer)
+        .toFormat("png")
+        .png({ quality: 70 })
+        .toFile(`uploads/jobSeekers/${imageFilename}`);
+
+      req.body.profileImage = imageFilename;
+    }
+
+    //  Process CV file
+    if (req.files && (req.files as any).cv) {
+      const cvFile = (req.files as any).cv[0];
+      const cvExt = cvFile.mimetype.split("/")[1] || "pdf"; // get file extension
+      const cvFilename = `cv-${uuidv4()}-${Date.now()}.${cvExt}`;
+
+      const fs = require("fs");
+      fs.writeFileSync(`uploads/cv/${cvFilename}`, cvFile.buffer);
+
+      req.body.cv = cvFilename;
+    }
+    if (req.files && (req.files as any).licenses) {
+      const licenseFile = (req.files as any).licenses[0];
+      const licenseExt = licenseFile.mimetype.split("/")[1] || "pdf";
+      const licenseFilename = `license-${uuidv4()}-${Date.now()}.${licenseExt}`;
+
+      const fs = require("fs");
+      fs.writeFileSync(
+        `uploads/licenses/${licenseFilename}`,
+        licenseFile.buffer
+      );
+
+      req.body.licenses = licenseFilename;
+    }
+
+    next();
+  }
+);
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -117,7 +187,7 @@ export const protect = asyncHandler(
 
       const currentUser = await JobSeekers.findById(decoded.userId);
       if (!currentUser)
-        return next(new ApiError("Employee does not exist", 404));
+        return next(new ApiError("JobSeeker does not exist", 404));
 
       req.user = currentUser;
       next();
@@ -148,8 +218,8 @@ export const signupJobSeekers = asyncHandler(
     const hashedVerificationCode = await bcrypt.hash(verificationCode, 10);
 
     const newJobSeeker = await JobSeekers.create({
+      ...req.body,
       name,
-      email,
       password: hashedPassword,
       active: false,
       emailVerificationCode: hashedVerificationCode,
@@ -157,7 +227,7 @@ export const signupJobSeekers = asyncHandler(
     });
 
     // Send verification email
-    const message = `Hello ${name},\n\nYour email verification code is: ${verificationCode}\nThis code will expire in 10 minutes.\n\nThank you,\nLinkedOut Team`;
+    const message = `Hello ${name},\n\nYour email verification code is: ${verificationCode}\nThis code will expire in 10 minutes.\n\nThank you,\nSmartPOS Team`;
 
     await sendEmail({
       email,
@@ -257,7 +327,7 @@ export const forgotPasswordJobSeekers = asyncHandler(
 
     await sendEmail({
       email: jobSeeker.email,
-      subject: "LinkedOut Password Reset Code",
+      subject: "SmartPOS Password Reset Code",
       message,
     });
 

@@ -5,30 +5,24 @@ const {
   updateJobUser,
   deleteJobUser,
   getJobUsers,
-  processJobUserFiles,
-  uploadJobUserFiles,
-  createJobUser,
 } = require("../../services/jobs/jobSeekersService");
+
+const {
+  uploadJobSeekerFiles,
+  processJobSeekerFiles,
+} = require("../../services/jobSeekersAuthService");
 
 const jobsUsersRoute = express.Router();
 
-jobsUsersRoute
-  .route("/")
-  .get(getJobUsers)
-  .post(
-    authService.protect,
-    uploadJobUserFiles,
-    processJobUserFiles,
-    createJobUser
-  );
+jobsUsersRoute.route("/").get(getJobUsers);
 
 jobsUsersRoute
   .route("/:id")
   .get(getJobUser)
   .put(
     authService.protect,
-    uploadJobUserFiles,
-    processJobUserFiles,
+    uploadJobSeekerFiles,
+    processJobSeekerFiles,
     updateJobUser
   )
   .delete(authService.protect, deleteJobUser);

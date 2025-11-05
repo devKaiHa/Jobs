@@ -20,13 +20,15 @@ const {
   verifyPasswordResetCodeJobSeekers,
   verifyEmailJobSeekers,
   googleLogin,
+  processJobSeekerFiles,
+  uploadJobSeekerFiles,
 } = require("../services/jobSeekersAuthService");
 
 const router = express.Router();
 
 //employee
 
-router.post("/login", upload.none(), login);
+router.post("/login", login);
 router.post("/verifyresetcodepos", verifyPasswordResetCodePos);
 router.post("/forgotPassword", forgotPassword);
 router.post(
@@ -36,11 +38,17 @@ router.post(
   createEmployee
 );
 router.post("/reSendPassword", reSendPassword);
-router.put("/resetpasswordpos", upload.none(), resetPasswordPos);
+router.put("/resetpasswordpos", resetPasswordPos);
 
 //job seekers
 
-router.post("/loginSeekers", upload.none(), loginJobSeekers);
+router.post(
+  "/signupSeekers",
+  uploadJobSeekerFiles,
+  processJobSeekerFiles,
+  signupJobSeekers
+);
+router.post("/loginSeekers", loginJobSeekers);
 router.post(
   "/verifyPasswordResetCodeSeekers",
   verifyPasswordResetCodeJobSeekers
@@ -48,8 +56,7 @@ router.post(
 router.post("/googleLogin", googleLogin);
 
 router.post("/forgotPasswordSeekers", forgotPasswordJobSeekers);
-router.post("/signupSeekers", signupJobSeekers);
 router.post("/verifyEmailJobSeekers", verifyEmailJobSeekers);
-router.put("/resetPasswordSeekers", upload.none(), resetPasswordJobSeekers);
+router.put("/resetPasswordSeekers", resetPasswordJobSeekers);
 
 module.exports = router;

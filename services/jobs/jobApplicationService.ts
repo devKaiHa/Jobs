@@ -60,7 +60,7 @@ export const createJobApplication = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { jobSeekerId, jobId } = req.body;
     const jobSeeker = await jobSeekersModel.findById(jobSeekerId);
-    if (!jobSeeker || !jobId ) {
+    if (!jobSeeker || !jobId) {
       return next(new ApiError("Job seeker or jobId not found", 404));
     }
     const applicationData = {
@@ -103,6 +103,6 @@ export const deleteJobApplication = asyncHandler(
       return next(new ApiError(`No job found for ID: ${id}`, 404));
     }
 
-    res.status(200).json({ status: "success", data: Applications });
+    res.status(200).json({ status: "deleted successfully" });
   }
 );

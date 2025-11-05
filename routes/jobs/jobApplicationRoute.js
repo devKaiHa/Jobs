@@ -1,5 +1,5 @@
 const express = require("express");
-const authService = require("../../services/employeeAuthService");
+const authService = require("../../services/jobSeekersAuthService");
 const {
   createJobApplication,
   deleteJobApplication,
@@ -19,6 +19,6 @@ jobApplicationRoute
   .route("/:id")
   .get(getOneJobApplication)
   .put(authService.protect, updateJobApplication)
-  .patch(authService.protect, deleteJobApplication);
+  .delete(authService.protect, deleteJobApplication);
 
 module.exports = jobApplicationRoute;
