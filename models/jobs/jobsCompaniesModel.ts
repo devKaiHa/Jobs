@@ -11,6 +11,11 @@ const jobCompanyModel = new mongoose.Schema(
     country: String,
     description: String,
     logo: String,
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending",
+    },
     verified: { type: Boolean, default: false },
     jobAdvertisement: [
       { type: mongoose.Schema.Types.ObjectId, ref: "jobAdvertisement" },
@@ -27,7 +32,7 @@ const setImageURL = (doc: any) => {
   }
   if (doc.files && doc.files.length > 0) {
     doc.files = doc.files.map((file: string) => {
-      return `${process.env.BASE_URL}/jobCompanies/${file}`;
+      return `${process.env.BASE_URL}/jobCompanies/files/${file}`;
     });
   }
 };

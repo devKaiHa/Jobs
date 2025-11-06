@@ -27,4 +27,14 @@ jobsUsersRoute
   )
   .delete(authService.protect, deleteJobUser);
 
+jobsUsersRoute
+  .route("/dashboard/:id")
+  .get(getJobUser)
+  .put(
+    uploadJobSeekerFiles,
+    processJobSeekerFiles,
+    updateJobUser
+  )
+  .delete(deleteJobUser);
+
 module.exports = jobsUsersRoute;
