@@ -48,7 +48,7 @@ const jobSeekersSchema = new mongoose.Schema(
       enum: ["Male", "Female", "Other"],
       default: "Other",
     },
-    favorite: [String],
+    // favorite: [String],
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, ObjectId } from "mongoose";
 
 export interface IJobSeeker extends Document {
   name: string;
@@ -24,7 +24,7 @@ export interface IJobSeeker extends Document {
   phone?: string;
   verified?: boolean;
   profileImage?: string;
-  role?: string
+  role?: string;
   cv?: string;
   gender?: "Male" | "Female" | "Other";
   isActive?: boolean;

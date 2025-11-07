@@ -15,6 +15,7 @@ const {
 const jobsUsersRoute = express.Router();
 
 jobsUsersRoute.route("/").get(getJobUsers);
+jobsUsersRoute.route("/dashboard").get(getJobUsers);
 
 jobsUsersRoute
   .route("/:id")
@@ -30,11 +31,7 @@ jobsUsersRoute
 jobsUsersRoute
   .route("/dashboard/:id")
   .get(getJobUser)
-  .put(
-    uploadJobSeekerFiles,
-    processJobSeekerFiles,
-    updateJobUser
-  )
+  .put(uploadJobSeekerFiles, processJobSeekerFiles, updateJobUser)
   .delete(deleteJobUser);
 
 module.exports = jobsUsersRoute;
