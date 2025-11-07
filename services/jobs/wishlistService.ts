@@ -11,6 +11,10 @@ export const getWishlists = asyncHandler(
 
     const query: any = {};
 
+    if (req.query.jobSeeker) {
+      query.jobSeeker = req.query.jobSeeker;
+    }
+
     const totalItems = await wishlistModel.countDocuments(query);
     const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -18,8 +22,9 @@ export const getWishlists = asyncHandler(
       .find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(pageSize);
-
+      .limit(pageSize)
+      .populate("jobSeeker", "lastName name")
+      .populate("job");
     res.status(200).json({
       status: "success",
       totalPages,
