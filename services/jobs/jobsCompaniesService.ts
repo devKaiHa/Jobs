@@ -2,13 +2,17 @@ import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import JobsCompany from "../../models/jobs/jobsCompaniesModel";
 import ApiError from "../../utils/apiError";
-import slugify from "slugify";
 import multer, { FileFilterCallback } from "multer";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 import { IJobsCompany } from "../../models/interfaces/jobsCompany";
+import mongoose from "mongoose";
+import axios from "axios";
+
+export const registrationDB = mongoose.createConnection(process.env.DB_URI);
+export const mainSystemDB = mongoose.createConnection(process.env.DB_URI2);
 
 const multerStorage = multer.memoryStorage();
 const logoFilter = (
@@ -110,8 +114,6 @@ export const getCompanies = asyncHandler(
 // =================== CREATE COMPANY ===================
 export const createCompany = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    req.body.slug = slugify(req.body.name);
-
     const company: IJobsCompany = await JobsCompany.create(req.body);
     res.status(201).json({
       status: "success",
@@ -135,7 +137,6 @@ export const getCompany = asyncHandler(
   }
 );
 
-// =================== UPDATE COMPANY ===================
 export const updateCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -145,12 +146,44 @@ export const updateCompany = asyncHandler(
     });
 
     if (!company) {
-      return next(new ApiError(`No company found for ID ${id}`, 404));
+      return next(new ApiError(`Invalid company with ID ${id}`, 404));
     }
 
+    if (company.status === "accepted") {
+      try {
+        await axios.post("http://localhost:8005/api/companyinfo", {
+          companyName: company.companyName,
+          companyEmail: company.email,
+          companyTel: company.phone,
+          companyAddress: company.address?.street,
+          companyLogo: company.logo,
+        });
+
+        res.status(200).json({
+          status: "success",
+          message: "Company has been approved and sent to the main system successfully",
+          data: company,
+        });
+      } catch (err: any) {
+        console.error("Error connecting to the main system:", err.message);
+        return next(new ApiError("Failed to send company data to the main system", 500));
+      }
+      return; // prevent sending multiple responses
+    }
+
+    if (company.status === "rejected") {
+      res.status(200).json({
+        status: "rejected",
+        message: "Company has been rejected",
+        data: company,
+      });
+      return;
+    }
+
+    // 🔹 If status is still pending
     res.status(200).json({
-      status: "success",
-      message: "Company updated successfully",
+      status: "pending",
+      message: "Company data updated, awaiting approval",
       data: company,
     });
   }

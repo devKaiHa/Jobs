@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
 const dbContacion = async () => {
-  var dbUrl = process.env.DB_URI;
+
 
   mongoose
-    .connect(dbUrl, {
+    .connect(process.env.DB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     })

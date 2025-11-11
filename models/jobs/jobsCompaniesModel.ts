@@ -3,13 +3,22 @@ import { IJobsCompany } from "../interfaces/jobsCompany";
 
 const jobCompanyModel = new mongoose.Schema(
   {
-    name: String,
-    slug: String,
-    email: String,
+    companyName: { type: String, required: true },
+    legalName: { type: String },
+    email: { type: String, required: true, unique: true, index: true },
+    contactPersonName: String,
     phone: String,
-    city: String,
-    country: String,
-    description: String,
+    website: String,
+    industry: String,
+    size: String,
+    registrationNumber: String,
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      postalCode: String,
+      country: String,
+    },
     logo: String,
     status: {
       type: String,
