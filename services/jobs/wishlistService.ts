@@ -47,15 +47,23 @@ export const createWishlist = asyncHandler(
 
 export const deleteWishlist = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const wishlists = await wishlistModel.findByIdAndDelete(id);
+    try {
+      const { id } = req.params;
+      const wishlists = await wishlistModel.findOneAndDelete({ job: id });
 
-    if (!wishlists)
-      return next(new ApiError(`No wishlists found for ID: ${id}`, 404));
+      if (!wishlists)
+        return next(new ApiError(`No wishlists found for ID: ${id}`, 404));
 
-    res.status(200).json({
-      status: "success",
-      message: "wishlists deleted",
-    });
+      res.status(200).json({
+        status: "success",
+        message: "wishlists deleted",
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        status: "error",
+        message: error,
+      });
+    }
   }
 );
