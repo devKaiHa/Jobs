@@ -1,18 +1,15 @@
-import axios from "axios";
+import axios from 'axios';
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import JobsCompany from "../../models/jobs/jobsCompaniesModel";
 import ApiError from "../../utils/apiError";
+import slugify from "slugify";
 import multer, { FileFilterCallback } from "multer";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 import { IJobsCompany } from "../../models/interfaces/jobsCompany";
-import mongoose from "mongoose";
-
-export const registrationDB = mongoose.createConnection(process.env.DB_URI);
-export const mainSystemDB = mongoose.createConnection(process.env.DB_URI2);
 
 const multerStorage = multer.memoryStorage();
 const logoFilter = (
@@ -114,6 +111,8 @@ export const getCompanies = asyncHandler(
 // =================== CREATE COMPANY ===================
 export const createCompany = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
+    req.body.slug = slugify(req.body.name);
+
     const company: IJobsCompany = await JobsCompany.create(req.body);
     res.status(201).json({
       status: "success",
@@ -152,24 +151,21 @@ export const updateCompany = asyncHandler(
     if (company.status === "accepted") {
       try {
         await axios.post("http://localhost:8005/api/companyinfo", {
-          companyName: company.companyName,
+          companyName: company.name,
           companyEmail: company.email,
           companyTel: company.phone,
-          companyAddress: company.address,
+          companyAddress: company.country ,
           companyLogo: company.logo,
         });
 
         res.status(200).json({
           status: "success",
-          message:
-            "Company has been approved and sent to the main system successfully",
+          message: "Company has been approved and sent to the main system successfully",
           data: company,
         });
       } catch (err: any) {
         console.error("Error connecting to the main system:", err.message);
-        return next(
-          new ApiError("Failed to send company data to the main system", 500)
-        );
+        return next(new ApiError("Failed to send company data to the main system", 500));
       }
       return; // prevent sending multiple responses
     }
@@ -191,6 +187,7 @@ export const updateCompany = asyncHandler(
     });
   }
 );
+
 
 export const deleteCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {

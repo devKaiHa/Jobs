@@ -1,28 +1,17 @@
-import mongoose, { Document, Types } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export interface IJobsCompany extends Document {
-  companyName: string;
-  legalName?: string;
-  email: string;
-  contactPersonName?: string;
+  name?: string;
+  slug?: string;
+  email?: string;
   phone?: string;
-  website?: string;
-  industry?: string;
-  size?: string;
-  registrationNumber?: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-  };
+  city?: string;
+  country?: string;
+  description?: string;
   logo?: string;
-  status?: "pending" | "accepted" | "rejected";
   verified?: boolean;
-  jobAdvertisement?: Types.ObjectId[];
-  files?: string[];
+  jobs?: mongoose.Types.ObjectId[];
+  files?: Array<{ key: string; fileUrl: string }>;
   isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  status? : string ; 
 }
