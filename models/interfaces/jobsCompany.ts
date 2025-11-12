@@ -1,10 +1,10 @@
 import mongoose, { Document, Types } from "mongoose";
 
 export interface IJobsCompany extends Document {
-  companyName: string; 
-  legalName?: string; 
+  companyName: string;
+  legalName?: string;
   email: string;
-  contactPersonName?: string; 
+  contactPersonName?: string;
   phone?: string;
   website?: string;
   industry?: string;
@@ -18,10 +18,10 @@ export interface IJobsCompany extends Document {
     country?: string;
   };
   logo?: string;
-  status?: "pending" | "accepted" | "rejected"; 
+  status?: "pending" | "accepted" | "rejected";
   verified?: boolean;
-  jobAdvertisement?: Types.ObjectId[]; 
-  files?: string[]; 
+  jobAdvertisement?: Types.ObjectId[];
+  files?: string[];
   isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;

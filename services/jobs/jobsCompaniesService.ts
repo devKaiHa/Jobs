@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import JobsCompany from "../../models/jobs/jobsCompaniesModel";
@@ -9,7 +10,6 @@ import fs from "fs";
 import path from "path";
 import { IJobsCompany } from "../../models/interfaces/jobsCompany";
 import mongoose from "mongoose";
-import axios from "axios";
 
 export const registrationDB = mongoose.createConnection(process.env.DB_URI);
 export const mainSystemDB = mongoose.createConnection(process.env.DB_URI2);
@@ -155,18 +155,21 @@ export const updateCompany = asyncHandler(
           companyName: company.companyName,
           companyEmail: company.email,
           companyTel: company.phone,
-          companyAddress: company.address?.street,
+          companyAddress: company.address,
           companyLogo: company.logo,
         });
 
         res.status(200).json({
           status: "success",
-          message: "Company has been approved and sent to the main system successfully",
+          message:
+            "Company has been approved and sent to the main system successfully",
           data: company,
         });
       } catch (err: any) {
         console.error("Error connecting to the main system:", err.message);
-        return next(new ApiError("Failed to send company data to the main system", 500));
+        return next(
+          new ApiError("Failed to send company data to the main system", 500)
+        );
       }
       return; // prevent sending multiple responses
     }
