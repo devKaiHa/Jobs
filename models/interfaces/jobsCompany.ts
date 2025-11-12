@@ -13,4 +13,5 @@ export interface IJobsCompany extends Document {
   jobs?: mongoose.Types.ObjectId[];
   files?: Array<{ key: string; fileUrl: string }>;
   isActive?: boolean;
+  status? : string ; 
 }

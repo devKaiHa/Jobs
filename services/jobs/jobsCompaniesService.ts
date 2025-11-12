@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import JobsCompany from "../../models/jobs/jobsCompaniesModel";
@@ -135,7 +136,6 @@ export const getCompany = asyncHandler(
   }
 );
 
-// =================== UPDATE COMPANY ===================
 export const updateCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -145,16 +145,49 @@ export const updateCompany = asyncHandler(
     });
 
     if (!company) {
-      return next(new ApiError(`No company found for ID ${id}`, 404));
+      return next(new ApiError(`Invalid company with ID ${id}`, 404));
     }
 
+    if (company.status === "accepted") {
+      try {
+        await axios.post("http://localhost:8005/api/companyinfo", {
+          companyName: company.name,
+          companyEmail: company.email,
+          companyTel: company.phone,
+          companyAddress: company.country ,
+          companyLogo: company.logo,
+        });
+
+        res.status(200).json({
+          status: "success",
+          message: "Company has been approved and sent to the main system successfully",
+          data: company,
+        });
+      } catch (err: any) {
+        console.error("Error connecting to the main system:", err.message);
+        return next(new ApiError("Failed to send company data to the main system", 500));
+      }
+      return; // prevent sending multiple responses
+    }
+
+    if (company.status === "rejected") {
+      res.status(200).json({
+        status: "rejected",
+        message: "Company has been rejected",
+        data: company,
+      });
+      return;
+    }
+
+    // 🔹 If status is still pending
     res.status(200).json({
-      status: "success",
-      message: "Company updated successfully",
+      status: "pending",
+      message: "Company data updated, awaiting approval",
       data: company,
     });
   }
 );
+
 
 export const deleteCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
