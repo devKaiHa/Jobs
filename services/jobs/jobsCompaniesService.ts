@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import JobsCompany from "../../models/jobs/jobsCompaniesModel";
@@ -111,7 +111,7 @@ export const getCompanies = asyncHandler(
 // =================== CREATE COMPANY ===================
 export const createCompany = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    req.body.slug = slugify(req.body.name);
+    // req.body.slug = slugify(req.body.name);
 
     const company: IJobsCompany = await JobsCompany.create(req.body);
     res.status(201).json({
@@ -150,24 +150,30 @@ export const updateCompany = asyncHandler(
 
     if (company.status === "accepted") {
       try {
+        
+        company.verified = true;
+        await company.save();
         await axios.post("http://localhost:8005/api/companyinfo", {
-          companyName: company.name,
+          companyName: company.companyName,
           companyEmail: company.email,
           companyTel: company.phone,
-          companyAddress: company.country ,
+          companyAddress: company.address.city,
           companyLogo: company.logo,
         });
 
         res.status(200).json({
           status: "success",
-          message: "Company has been approved and sent to the main system successfully",
+          message:
+            "Company has been approved and sent to the main system successfully",
           data: company,
         });
       } catch (err: any) {
         console.error("Error connecting to the main system:", err.message);
-        return next(new ApiError("Failed to send company data to the main system", 500));
+        return next(
+          new ApiError("Failed to send company data to the main system", 500)
+        );
       }
-      return; // prevent sending multiple responses
+      return;
     }
 
     if (company.status === "rejected") {
@@ -187,7 +193,6 @@ export const updateCompany = asyncHandler(
     });
   }
 );
-
 
 export const deleteCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {

@@ -18,6 +18,9 @@ export const getAllJobApplications = asyncHandler(
     if (req.query.jobId) {
       query.jobId = req.query.jobId;
     }
+    if (req.query.jobSeekerId) {
+      query.jobSeekerId = req.query.jobSeekerId;
+    }
 
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
