@@ -150,12 +150,13 @@ export const updateCompany = asyncHandler(
 
     if (company.status === "accepted") {
       try {
-        
         company.verified = true;
         await company.save();
         await axios.post("http://localhost:8005/api/companyinfo", {
           companyName: company.companyName,
           companyEmail: company.email,
+          email: company.email,
+          name: company.companyName,
           companyTel: company.phone,
           companyAddress: company.address.city,
           companyLogo: company.logo,
