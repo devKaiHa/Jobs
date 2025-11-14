@@ -4,6 +4,7 @@ import asyncHandler from "express-async-handler";
 import ApiError from "../../utils/apiError";
 import jobApplicationModel from "../../models/jobs/jobApplicationModel";
 import jobSeekersModel from "../../models/jobSeekersModel";
+import jobAdvertisementModel from "../../models/jobs/jobAdvertisementModel";
 
 export const getAllJobApplications = asyncHandler(
   async (req: Request, res: Response) => {
@@ -34,7 +35,14 @@ export const getAllJobApplications = asyncHandler(
       .limit(limit)
       .sort({ createdAt: -1 })
       .populate("jobSeekerId")
-      .populate("jobId");
+      .populate("jobId")
+      .populate({
+        path: "jobId",
+        populate: {
+          path: "company",
+          select: "companyName",
+        },
+      });
 
     res.status(200).json({
       status: "success",
