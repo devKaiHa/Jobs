@@ -85,7 +85,20 @@ export const getCompanies = asyncHandler(
     const query: Record<string, any> = {};
     if (req.query.keyword) {
       query.$or = [
-        { name: { $regex: req.query.keyword as string, $options: "i" } },
+        { companyName: { $regex: req.query.keyword as string, $options: "i" } },
+        { industry: { $regex: req.query.keyword as string, $options: "i" } },
+        {
+          "address.city": {
+            $regex: req.query.keyword as string,
+            $options: "i",
+          },
+        },
+        {
+          "address.country": {
+            $regex: req.query.keyword as string,
+            $options: "i",
+          },
+        },
       ];
     }
 
@@ -108,7 +121,6 @@ export const getCompanies = asyncHandler(
 
 export const createCompany = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-
     const company: IJobsCompany = await JobsCompany.create(req.body);
     res.status(201).json({
       status: "success",

@@ -20,6 +20,8 @@ const jobCompanyModel = new mongoose.Schema(
       country: String,
     },
     logo: String,
+    about: String,
+    foundedAt: String,
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected"],
@@ -37,11 +39,11 @@ const jobCompanyModel = new mongoose.Schema(
 
 const setImageURL = (doc: any) => {
   if (doc.logo) {
-    doc.logo = `${process.env.BASE_URL}/jobCompanies/${doc.logo}`;
+    doc.logo = `${process.env.BASE_URL}:${process.env.PORT}/jobCompanies/${doc.logo}`;
   }
   if (doc.files && doc.files.length > 0) {
     doc.files = doc.files.map((file: string) => {
-      return `${process.env.BASE_URL}/jobCompanies/files/${file}`;
+      return `${process.env.BASE_URL}:${process.env.PORT}/jobCompanies/files/${file}`;
     });
   }
 };

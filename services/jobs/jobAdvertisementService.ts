@@ -52,9 +52,9 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (req.query.companyId) {
-    query.companyId = req.query.companyId;
+    query.company = req.query.companyId;
   }
-   if (req.query.company) {
+  if (req.query.company) {
     query.company = req.query.company;
   }
   if (req.query.status) {
@@ -63,6 +63,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
   if (req.query.endDate) {
     query.endDate = req.query.endDate;
   }
+  console.log(`query`, query);
 
   const page = parseInt(req.query.page as string, 10) || 1;
   const limit = parseInt(req.query.limit as string, 10) || 10;
@@ -75,7 +76,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })
-    .populate("company", "name  email");
+    .populate("company", "companyName email logo");
 
   res.status(200).json({
     status: "success",
