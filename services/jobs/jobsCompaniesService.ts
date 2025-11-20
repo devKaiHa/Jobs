@@ -3,7 +3,6 @@ import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import JobsCompany from "../../models/jobs/jobsCompaniesModel";
 import ApiError from "../../utils/apiError";
-import slugify from "slugify";
 import multer, { FileFilterCallback } from "multer";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
@@ -77,7 +76,6 @@ export const processCompanyFiles = asyncHandler(
   }
 );
 
-// =================== GET ALL COMPANIES ===================
 export const getCompanies = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
     const pageSize = parseInt(req.query.limit as string) || 10;
@@ -108,10 +106,8 @@ export const getCompanies = asyncHandler(
   }
 );
 
-// =================== CREATE COMPANY ===================
 export const createCompany = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    // req.body.slug = slugify(req.body.name);
 
     const company: IJobsCompany = await JobsCompany.create(req.body);
     res.status(201).json({
@@ -122,7 +118,6 @@ export const createCompany = asyncHandler(
   }
 );
 
-// =================== GET SPECIFIC COMPANY ===================
 export const getCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -186,7 +181,6 @@ export const updateCompany = asyncHandler(
       return;
     }
 
-    // 🔹 If status is still pending
     res.status(200).json({
       status: "pending",
       message: "Company data updated, awaiting approval",

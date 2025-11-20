@@ -1,9 +1,9 @@
 import mongoose, { Document } from "mongoose";
 
 export interface IJobsCompany extends Document {
-  companyName: string; // required
+  companyName: string
   legalName?: string;
-  email: string; // required and unique
+  email: string; 
   contactPersonName?: string;
   phone?: string;
   website?: string;
@@ -18,7 +18,7 @@ export interface IJobsCompany extends Document {
     country?: string;
   };
   logo?: string;
-  status?: "pending" | "accepted" | "rejected"; // enum
+  status?: "pending" | "accepted" | "rejected"; 
   verified?: boolean;
   jobAdvertisement?: mongoose.Types.ObjectId[];
   files?: string[];

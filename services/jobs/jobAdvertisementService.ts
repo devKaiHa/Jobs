@@ -47,11 +47,15 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
     query.$or = [
       { jobTitle: { $regex: req.query.keyword as string, $options: "i" } },
       { location: { $regex: req.query.keyword as string, $options: "i" } },
+      { skills: { $regex: req.query.keyword as string, $options: "i" } },
     ];
   }
 
   if (req.query.companyId) {
     query.companyId = req.query.companyId;
+  }
+   if (req.query.company) {
+    query.company = req.query.company;
   }
   if (req.query.status) {
     query.status = req.query.status;
