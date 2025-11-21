@@ -9,6 +9,7 @@ import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 import { IJobsCompany } from "../../models/interfaces/jobsCompany";
+import sendEmail from "../../utils/sendEmail";
 
 const multerStorage = multer.memoryStorage();
 const logoFilter = (
@@ -155,11 +156,11 @@ export const updateCompany = asyncHandler(
       return next(new ApiError(`Invalid company with ID ${id}`, 404));
     }
 
-    if (company.status === "accepted") {
+    if (req.body.status === "accepted") {
       try {
-        company.verified = true;
+        // company.verified = true;
         await company.save();
-        await axios.post("http://localhost:8005/api/companyinfo", {
+        await axios.post("http://localhost:80/api/companyinfo", {
           companyName: company.companyName,
           companyEmail: company.email,
           email: company.email,
@@ -204,6 +205,7 @@ export const updateCompany = asyncHandler(
 export const deleteCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
+    const { message } = req.body;
 
     const company = await JobsCompany.findByIdAndDelete(id);
 
@@ -211,9 +213,19 @@ export const deleteCompany = asyncHandler(
       return next(new ApiError(`No company found for ID ${id}`, 404));
     }
 
+    const email = company.email;
+
+    await sendEmail({
+      email,
+      subject: "Company Registration Rejected",
+      message:
+        message ||
+        `Hello ${company.companyName}, we're sorry to inform you that your registration request has been declined.`,
+    });
+
     res.status(200).json({
       status: "success",
-      message: "Company deleted",
+      message: "Company deleted and email sent",
     });
   }
 );
