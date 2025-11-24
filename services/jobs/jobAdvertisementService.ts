@@ -7,6 +7,7 @@ import jobsCompanies from "../../models/jobs/jobsCompaniesModel";
 import multer from "multer";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
+import JobApplication from "../../models/jobs/jobApplicationModel";
 
 const multerStorage = multer.memoryStorage();
 
@@ -63,7 +64,6 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
   if (req.query.endDate) {
     query.endDate = req.query.endDate;
   }
-  console.log(`query`, query);
 
   const page = parseInt(req.query.page as string, 10) || 1;
   const limit = parseInt(req.query.limit as string, 10) || 10;
@@ -91,13 +91,29 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
 export const getOneJob = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
+    const userId = req.query.userId as string;
     const job = await jobsModel.findById(id).populate("company");
 
     if (!job) {
       return next(new ApiError(`No job found for this ID: ${id}`, 404));
     }
 
-    res.status(200).json({ status: "success", data: job });
+    let isApplied = false;
+
+    if (userId) {
+      const existingApplication = await JobApplication.findOne({
+        jobId: id,
+        jobSeekerId: userId,
+      });
+
+      if (existingApplication) {
+        isApplied = true;
+      }
+    }
+
+    res
+      .status(200)
+      .json({ status: "success", data: { ...job.toObject(), isApplied } });
   }
 );
 
