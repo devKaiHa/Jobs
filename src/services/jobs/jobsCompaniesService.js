@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -37,12 +46,12 @@ exports.uploadCompanyFiles = upload.fields([
     { name: "logo", maxCount: 1 },
     { name: "files", maxCount: 5 },
 ]);
-exports.processCompanyFiles = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.processCompanyFiles = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const filesField = req.files;
     if (filesField && filesField.logo && filesField.logo[0]) {
         const logoFile = filesField.logo[0];
         const filename = `company-logo-${(0, uuid_1.v4)()}-${Date.now()}.png`;
-        await (0, sharp_1.default)(logoFile.buffer)
+        yield (0, sharp_1.default)(logoFile.buffer)
             .toFormat("png")
             .png({ quality: 70 })
             .toFile(`uploads/jobCompanies/${filename}`);
@@ -61,8 +70,8 @@ exports.processCompanyFiles = (0, express_async_handler_1.default)(async (req, r
         req.body.files = savedFileNames;
     }
     next();
-});
-exports.getCompanies = (0, express_async_handler_1.default)(async (req, res) => {
+}));
+exports.getCompanies = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const pageSize = parseInt(req.query.limit) || 10;
     const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * pageSize;
@@ -85,9 +94,9 @@ exports.getCompanies = (0, express_async_handler_1.default)(async (req, res) => 
             },
         ];
     }
-    const totalItems = await jobsCompaniesModel_1.default.countDocuments(query);
+    const totalItems = yield jobsCompaniesModel_1.default.countDocuments(query);
     const totalPages = Math.ceil(totalItems / pageSize);
-    const companies = await jobsCompaniesModel_1.default.find(query)
+    const companies = yield jobsCompaniesModel_1.default.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize);
@@ -97,26 +106,26 @@ exports.getCompanies = (0, express_async_handler_1.default)(async (req, res) => 
         results: totalItems,
         data: companies,
     });
-});
-exports.createCompany = (0, express_async_handler_1.default)(async (req, res) => {
-    const company = await jobsCompaniesModel_1.default.create(req.body);
+}));
+exports.createCompany = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const company = yield jobsCompaniesModel_1.default.create(req.body);
     res.status(201).json({
         status: "success",
         message: "Company created successfully",
         data: company,
     });
-});
-exports.getCompany = (0, express_async_handler_1.default)(async (req, res, next) => {
+}));
+exports.getCompany = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const company = await jobsCompaniesModel_1.default.findById(id).populate("jobAdvertisement");
+    const company = yield jobsCompaniesModel_1.default.findById(id).populate("jobAdvertisement");
     if (!company) {
         return next(new apiError_1.default(`No company found for ID: ${id}`, 404));
     }
     res.status(200).json({ status: "success", data: company });
-});
-exports.updateCompany = (0, express_async_handler_1.default)(async (req, res, next) => {
+}));
+exports.updateCompany = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const company = await jobsCompaniesModel_1.default.findByIdAndUpdate(id, req.body, {
+    const company = yield jobsCompaniesModel_1.default.findByIdAndUpdate(id, req.body, {
         new: true,
     });
     if (!company) {
@@ -125,8 +134,8 @@ exports.updateCompany = (0, express_async_handler_1.default)(async (req, res, ne
     if (req.body.status === "accepted") {
         try {
             // company.verified = true;
-            await company.save();
-            await axios_1.default.post("http://localhost:80/api/companyinfo", {
+            yield company.save();
+            yield axios_1.default.post("http://localhost:80/api/companyinfo", {
                 companyName: company.companyName,
                 companyEmail: company.email,
                 email: company.email,
@@ -161,16 +170,16 @@ exports.updateCompany = (0, express_async_handler_1.default)(async (req, res, ne
         message: "Company data updated, awaiting approval",
         data: company,
     });
-});
-exports.deleteCompany = (0, express_async_handler_1.default)(async (req, res, next) => {
+}));
+exports.deleteCompany = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const { message } = req.body;
-    const company = await jobsCompaniesModel_1.default.findByIdAndDelete(id);
+    const company = yield jobsCompaniesModel_1.default.findByIdAndDelete(id);
     if (!company) {
         return next(new apiError_1.default(`No company found for ID ${id}`, 404));
     }
     const email = company.email;
-    await (0, sendEmail_1.default)({
+    yield (0, sendEmail_1.default)({
         email,
         subject: "Company Registration Rejected",
         message: message ||
@@ -180,4 +189,4 @@ exports.deleteCompany = (0, express_async_handler_1.default)(async (req, res, ne
         status: "success",
         message: "Company deleted and email sent",
     });
-});
+}));

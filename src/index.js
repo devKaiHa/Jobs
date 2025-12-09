@@ -32,7 +32,7 @@ const server = app.listen(PORT, () => {
     console.log(`app running on port ${PORT}`);
 });
 process.on("unhandledRejection", (err) => {
-    console.error(`unhandledRejection Errors:${err?.name} | ${err?.message}`);
+    console.error(`unhandledRejection Errors:${err === null || err === void 0 ? void 0 : err.name} | ${err === null || err === void 0 ? void 0 : err.message}`);
     server.close(() => {
         console.error(`Shutting down....`);
         process.exit(1);

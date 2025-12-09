@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -34,11 +43,11 @@ exports.uploadJobSeekerFiles = upload.fields([
     { name: "cv", maxCount: 1 },
     { name: "licenses", maxCount: 1 },
 ]);
-exports.processJobSeekerFiles = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.processJobSeekerFiles = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     if (req.files && req.files.profileImage) {
         const imageFile = req.files.profileImage[0];
         const imageFilename = `profileImage-${(0, uuid_1.v4)()}-${Date.now()}.png`;
-        await (0, sharp_1.default)(imageFile.buffer)
+        yield (0, sharp_1.default)(imageFile.buffer)
             .toFormat("png")
             .png({ quality: 70 })
             .toFile(`uploads/jobSeekers/${imageFilename}`);
@@ -62,11 +71,11 @@ exports.processJobSeekerFiles = (0, express_async_handler_1.default)(async (req,
         req.body.licenses = licenseFilename;
     }
     next();
-});
+}));
 const client = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-exports.googleLogin = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.googleLogin = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { token } = req.body;
-    const ticket = await client.verifyIdToken({
+    const ticket = yield client.verifyIdToken({
         idToken: token,
         audience: process.env.GOOGLE_CLIENT_ID,
     });
@@ -74,9 +83,9 @@ exports.googleLogin = (0, express_async_handler_1.default)(async (req, res, next
     if (!payload)
         return next(new apiError_1.default("Google token not valid", 400));
     const { email, name, picture } = payload;
-    let jobSeeker = await jobSeekersModel_1.default.findOne({ email });
+    let jobSeeker = yield jobSeekersModel_1.default.findOne({ email });
     if (!jobSeeker) {
-        jobSeeker = await jobSeekersModel_1.default.create({
+        jobSeeker = yield jobSeekersModel_1.default.create({
             name,
             email,
             verified: true,
@@ -91,17 +100,18 @@ exports.googleLogin = (0, express_async_handler_1.default)(async (req, res, next
         jobSeeker,
         token: jwtToken,
     });
-});
-exports.protect = (0, express_async_handler_1.default)(async (req, res, next) => {
+}));
+exports.protect = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     let token;
-    if (req.headers.authorization?.startsWith("Bearer")) {
+    if ((_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.startsWith("Bearer")) {
         token = req.headers.authorization.split(" ")[1];
     }
     if (!token)
         return next(new apiError_1.default("Not logged in", 401));
     try {
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET_KEY);
-        const currentUser = await jobSeekersModel_1.default.findById(decoded.userId);
+        const currentUser = yield jobSeekersModel_1.default.findById(decoded.userId);
         if (!currentUser)
             return next(new apiError_1.default("JobSeeker does not exist", 404));
         req.user = currentUser;
@@ -112,28 +122,21 @@ exports.protect = (0, express_async_handler_1.default)(async (req, res, next) =>
             return next(new apiError_1.default("Token has expired", 401));
         return next(new apiError_1.default("Not logged in", 401));
     }
-});
+}));
 // ====== Signup (with Email Verification) ======
-exports.signupJobSeekers = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.signupJobSeekers = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, email, password } = req.body;
-    const existingJobSeeker = await jobSeekersModel_1.default.findOne({ email });
+    const existingJobSeeker = yield jobSeekersModel_1.default.findOne({ email });
     if (existingJobSeeker)
         return next(new apiError_1.default("Email already registered", 400));
-    const hashedPassword = await bcrypt_1.default.hash(password, 10);
+    const hashedPassword = yield bcrypt_1.default.hash(password, 10);
     // Generate email verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedVerificationCode = await bcrypt_1.default.hash(verificationCode, 10);
-    const newJobSeeker = await jobSeekersModel_1.default.create({
-        ...req.body,
-        name,
-        password: hashedPassword,
-        active: false,
-        emailVerificationCode: hashedVerificationCode,
-        emailVerificationExpires: Date.now() + 10 * 60 * 1000,
-    });
+    const hashedVerificationCode = yield bcrypt_1.default.hash(verificationCode, 10);
+    const newJobSeeker = yield jobSeekersModel_1.default.create(Object.assign(Object.assign({}, req.body), { name, password: hashedPassword, active: false, emailVerificationCode: hashedVerificationCode, emailVerificationExpires: Date.now() + 10 * 60 * 1000 }));
     // Send verification email
     const message = `Hello ${name},\n\nYour email verification code is: ${verificationCode}\nThis code will expire in 10 minutes.\n\nThank you,\nSmartPOS Team`;
-    await (0, sendEmail_1.default)({
+    yield (0, sendEmail_1.default)({
         email,
         subject: "Verify your email - LinkedOut",
         message,
@@ -144,37 +147,37 @@ exports.signupJobSeekers = (0, express_async_handler_1.default)(async (req, res,
         user: newJobSeeker,
         role: "job_seeker",
     });
-});
+}));
 // ====== Verify Email ======
-exports.verifyEmailJobSeekers = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.verifyEmailJobSeekers = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, verificationCode } = req.body;
-    const jobSeeker = await jobSeekersModel_1.default.findOne({
+    const jobSeeker = yield jobSeekersModel_1.default.findOne({
         email,
         emailVerificationExpires: { $gt: new Date() },
     });
     if (!jobSeeker)
         return next(new apiError_1.default("Verification code invalid or expired", 400));
-    const isValid = await bcrypt_1.default.compare(verificationCode, jobSeeker.emailVerificationCode);
+    const isValid = yield bcrypt_1.default.compare(verificationCode, jobSeeker.emailVerificationCode);
     if (!isValid)
         return next(new apiError_1.default("Verification code invalid or expired", 400));
     jobSeeker.verified = true;
     jobSeeker.emailVerificationCode = undefined;
     jobSeeker.emailVerificationExpires = undefined;
-    await jobSeeker.save();
+    yield jobSeeker.save();
     res.status(200).json({
         status: "success",
         message: "Email verified successfully",
     });
-});
+}));
 // ====== Login (only for verified users) ======
-exports.loginJobSeekers = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.loginJobSeekers = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
-    const jobSeeker = await jobSeekersModel_1.default.findOne({ email });
+    const jobSeeker = yield jobSeekersModel_1.default.findOne({ email });
     if (!jobSeeker)
         return next(new apiError_1.default("Incorrect email", 401));
     if (!jobSeeker.verified)
         return next(new apiError_1.default("Please verify your email before logging in", 401));
-    const passwordMatch = await bcrypt_1.default.compare(password, jobSeeker.password);
+    const passwordMatch = yield bcrypt_1.default.compare(password, jobSeeker.password);
     if (!passwordMatch)
         return next(new apiError_1.default("Incorrect password", 401));
     const token = (0, createToken_1.default)(jobSeeker._id);
@@ -185,21 +188,21 @@ exports.loginJobSeekers = (0, express_async_handler_1.default)(async (req, res, 
         jobSeeker,
         token,
     });
-});
+}));
 // ====== Forgot Password ======
-exports.forgotPasswordJobSeekers = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.forgotPasswordJobSeekers = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
-    const jobSeeker = await jobSeekersModel_1.default.findOne({ email });
+    const jobSeeker = yield jobSeekersModel_1.default.findOne({ email });
     if (!jobSeeker)
         return next(new apiError_1.default("No account found with this email", 404));
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedResetCode = await bcrypt_1.default.hash(resetCode, 10);
+    const hashedResetCode = yield bcrypt_1.default.hash(resetCode, 10);
     jobSeeker.passwordResetCode = hashedResetCode;
     jobSeeker.passwordResetExpires = Date.now() + 10 * 60 * 1000;
     jobSeeker.resetCodeVerified = false;
-    await jobSeeker.save();
+    yield jobSeeker.save();
     const message = `Hello ${jobSeeker.name},\n\nYour password reset code is: ${resetCode}\nThis code will expire in 10 minutes.\n\nLinkedOut Team`;
-    await (0, sendEmail_1.default)({
+    yield (0, sendEmail_1.default)({
         email: jobSeeker.email,
         subject: "SmartPOS Password Reset Code",
         message,
@@ -208,43 +211,43 @@ exports.forgotPasswordJobSeekers = (0, express_async_handler_1.default)(async (r
         status: "success",
         message: "Reset code sent to your email",
     });
-});
+}));
 // ====== Verify Password Reset Code ======
-exports.verifyPasswordResetCodeJobSeekers = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.verifyPasswordResetCodeJobSeekers = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, resetCode } = req.body;
-    const jobSeeker = await jobSeekersModel_1.default.findOne({
+    const jobSeeker = yield jobSeekersModel_1.default.findOne({
         email,
         passwordResetExpires: { $gt: new Date() },
     });
     if (!jobSeeker)
         return next(new apiError_1.default("Reset code invalid or expired", 400));
-    const isValid = await bcrypt_1.default.compare(resetCode, jobSeeker.passwordResetCode);
+    const isValid = yield bcrypt_1.default.compare(resetCode, jobSeeker.passwordResetCode);
     if (!isValid)
         return next(new apiError_1.default("Reset code invalid or expired", 400));
     jobSeeker.resetCodeVerified = true;
-    await jobSeeker.save();
+    yield jobSeeker.save();
     res.status(200).json({
         status: "success",
         message: "Code verified successfully",
     });
-});
+}));
 // ====== Reset Password ======
-exports.resetPasswordJobSeekers = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.resetPasswordJobSeekers = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, newPassword } = req.body;
-    const jobSeeker = await jobSeekersModel_1.default.findOne({ email });
+    const jobSeeker = yield jobSeekersModel_1.default.findOne({ email });
     if (!jobSeeker)
         return next(new apiError_1.default(`No job seeker found with email ${email}`, 404));
     if (!jobSeeker.resetCodeVerified)
         return next(new apiError_1.default("Reset code not verified", 400));
-    const hashedPassword = await bcrypt_1.default.hash(newPassword, 10);
+    const hashedPassword = yield bcrypt_1.default.hash(newPassword, 10);
     jobSeeker.password = hashedPassword;
     jobSeeker.passwordResetCode = undefined;
     jobSeeker.passwordResetExpires = undefined;
     jobSeeker.resetCodeVerified = undefined;
-    await jobSeeker.save();
+    yield jobSeeker.save();
     res.status(200).json({
         status: "success",
         message: "Password reset successfully",
         jobSeeker,
     });
-});
+}));
