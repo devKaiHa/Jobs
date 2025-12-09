@@ -5,7 +5,7 @@ export interface IJobs extends Document {
   type?: string;
   location?: string;
   description?: string;
-  expectedSalary?: number;
+  expectedSalary?: string;
   responsibilities?: string[];
   qualifications?: string[];
   endDate?: string;
@@ -13,7 +13,7 @@ export interface IJobs extends Document {
   company?: ObjectId;
   status?: boolean;
   companyId?: String;
-  applicantsNumber?: string;
+  applicantsNumber?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

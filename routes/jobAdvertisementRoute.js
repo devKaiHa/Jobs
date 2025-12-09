@@ -15,7 +15,11 @@ const jobRoute = express.Router();
 jobRoute
   .route("/")
   .get(getAllJobs)
-  .post(authService.protect, uploadCompanyLogo, resizeCompanyLogo, createJobs);
+  .post(
+    /*authService.protect,*/ uploadCompanyLogo,
+    resizeCompanyLogo,
+    createJobs
+  );
 
 jobRoute
   .route("/:id")

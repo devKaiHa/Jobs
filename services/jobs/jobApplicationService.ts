@@ -13,9 +13,24 @@ export const getAllJobApplications = asyncHandler(
     if (req.query.keyword) {
       query.$or = [
         { status: { $regex: req.query.keyword as string, $options: "i" } },
+        {
+          "jobSeekerId.name": {
+            $regex: req.query.keyword as string,
+            $options: "i",
+          },
+        },
+        {
+          "jobSeekerId.lastName": {
+            $regex: req.query.keyword as string,
+            $options: "i",
+          },
+        },
       ];
     }
 
+    if (req.query.jobsCompanyId) {
+      query.jobsCompanyId = req.query.jobsCompanyId;
+    }
     if (req.query.jobId) {
       query.jobId = req.query.jobId;
     }
@@ -83,6 +98,11 @@ export const createJobApplication = asyncHandler(
     const applicationData = req.body;
 
     const Applications = await jobApplicationModel.create(applicationData);
+    await jobAdvertisementModel.findOneAndUpdate(
+      { _id: jobId },
+      { $inc: { applicantsNumber: 1 } },
+      { new: true }
+    );
     res.status(201).json({ status: "success", data: Applications });
   }
 );

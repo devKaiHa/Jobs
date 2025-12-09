@@ -93,7 +93,7 @@ export const createEmployee = asyncHandler(
       const employeePass = generatePassword();
       let employee: Document<unknown, {}, IEmployee> &
         IEmployee & { _id: Types.ObjectId };
-  
+
       //Send password to email
       if (!findEmployee) {
         req.body.password = await bcrypt.hash(employeePass, 12);
@@ -104,7 +104,7 @@ export const createEmployee = asyncHandler(
         });
         employee = await Employee.create(req.body);
       } else {
-         res.status(400).json({
+        res.status(400).json({
           status: false,
           message: "Employee already exists",
         });
@@ -127,9 +127,9 @@ export const reSendPassword = asyncHandler(
 
     //Check if the email format is true or not
 
-    const findEmployee = await Employee.findOne({ email: req.body.email });  
+    const findEmployee = await Employee.findOne({ email: req.body.email });
     if (!findEmployee) {
-       res.status(400).json({
+      res.status(400).json({
         status: false,
         message: "Email not found",
       });
@@ -205,9 +205,10 @@ export const protect = asyncHandler(
       const decoded = jwt.verify(
         token,
         process.env.JWT_SECRET_KEY as string
-      ) as { userId: string };
+      ) as { email: string };
+      console.log("decoded", decoded);
 
-      const currentUser = await Employee.findById(decoded.userId);
+      const currentUser = await Employee.findOne({ email: decoded.email });
       if (!currentUser)
         return next(new ApiError("Employee does not exist", 404));
 

@@ -9,6 +9,7 @@ const jobApplicationSchema = new Schema<IJobApplication>(
       required: true,
     },
     jobId: { type: Schema.Types.ObjectId, ref: "jobAdvertisement" },
+    jobsCompanyId: { type: Schema.Types.ObjectId, ref: "jobCompanies" },
     status: {
       type: String,
       default: "pending",

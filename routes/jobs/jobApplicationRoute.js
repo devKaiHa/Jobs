@@ -18,7 +18,7 @@ jobApplicationRoute
 jobApplicationRoute
   .route("/:id")
   .get(getOneJobApplication)
-  .put(authService.protect, updateJobApplication)
+  .put(updateJobApplication)
   .delete(authService.protect, deleteJobApplication);
 
 module.exports = jobApplicationRoute;

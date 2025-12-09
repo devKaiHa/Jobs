@@ -134,7 +134,7 @@ export const createCompany = asyncHandler(
 export const getCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
-    const company = await JobsCompany.findById(id);
+    const company = await JobsCompany.findById(id).populate("jobAdvertisement");
 
     if (!company) {
       return next(new ApiError(`No company found for ID: ${id}`, 404));
@@ -168,6 +168,7 @@ export const updateCompany = asyncHandler(
           companyTel: company.phone,
           companyAddress: company.address.city,
           companyLogo: company.logo,
+          jobsCompanyId: req.body.jobsCompanyId,
         });
 
         res.status(200).json({

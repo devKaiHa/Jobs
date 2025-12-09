@@ -1,13 +1,12 @@
-import mongoose from "mongoose";
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
 import ApiError from "../../utils/apiError";
 import jobsModel from "../../models/jobs/jobAdvertisementModel";
-import jobsCompanies from "../../models/jobs/jobsCompaniesModel";
 import multer from "multer";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 import JobApplication from "../../models/jobs/jobApplicationModel";
+import JobsCompany from "../../models/jobs/jobsCompaniesModel";
 
 const multerStorage = multer.memoryStorage();
 
@@ -53,7 +52,7 @@ export const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (req.query.companyId) {
-    query.company = req.query.companyId;
+    query.companyId = req.query.companyId;
   }
   if (req.query.company) {
     query.company = req.query.company;
@@ -119,6 +118,15 @@ export const getOneJob = asyncHandler(
 
 export const createJobs = asyncHandler(async (req: Request, res: Response) => {
   const job = await jobsModel.create(req.body);
+  const company = await JobsCompany.findById(req.body.company);
+
+  if (!company) {
+    res.status(404).json({ status: "fail", data: "Company not found" });
+  }
+
+  company.jobAdvertisement.push(job._id);
+  await company.save();
+
   res.status(201).json({ status: "success", data: job });
 });
 

@@ -7,7 +7,7 @@ const jobAdSchema = new Schema<IJobs>(
     type: { type: String },
     location: { type: String },
     description: { type: String },
-    expectedSalary: { type: Number },
+    expectedSalary: { type: String },
     responsibilities: [{ type: String }],
     qualifications: [{ type: String }],
     endDate: { type: String },
@@ -15,7 +15,7 @@ const jobAdSchema = new Schema<IJobs>(
     company: { type: Schema.Types.ObjectId, ref: "jobCompanies" },
     companyId: String,
     status: { type: Boolean },
-    applicantsNumber: String,
+    applicantsNumber: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
