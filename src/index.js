@@ -5,14 +5,13 @@ const cors = require("cors");
 const morgan = require("morgan");
 const globalError = require("./middlewares/errorMiddleware");
 // const cron = require("node-cron");
-
+const dbContacion = require("./config/database");
+const mountRoutes = require("./routes/index");
 dotenv.config({ path: "config.env" });
-
 const app = express();
 
 // Database connection (assuming dbContacion is a function connecting to your database)
-const dbContacion = require("./config/database");
-const mountRoutes = require("./routes/index");
+
 // const { syncAllData } = require("./services/syncServices");
 dbContacion();
 
@@ -33,7 +32,7 @@ if (process.env.NODE_ENV === "development") {
 mountRoutes(app);
 
 // Global error handling middleware for express
-app.use(globalError);
+// app.use(globalError);
 // app.use(express.static(path.join(__dirname, "build")));
 // app.get("/*", (req, res) => {
 //   res.sendFile(path.join(__dirname, "build", "index.html"));
