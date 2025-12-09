@@ -3,7 +3,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
-const globalError = require("./middlewares/errorMiddleware.js");
+const globalError = require("./middlewares/errorMiddleware");
 // const cron = require("node-cron");
 
 dotenv.config({ path: "config.env" });
@@ -11,8 +11,8 @@ dotenv.config({ path: "config.env" });
 const app = express();
 
 // Database connection (assuming dbContacion is a function connecting to your database)
-const dbContacion = require("./config/database.js");
-const mountRoutes = require("./routes/index.js");
+const dbContacion = require("./config/database");
+const mountRoutes = require("./routes/index");
 // const { syncAllData } = require("./services/syncServices");
 dbContacion();
 
