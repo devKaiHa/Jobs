@@ -1,0 +1,14 @@
+{
+  "exclude": ["node_modules", "dist", "uploads"],
+  "jsc": {
+    "target": "es2020",
+    "parser": {
+      "syntax": "typescript",
+      "tsx": false,
+      "decorators": false
+    }
+  },
+  "module": {
+    "type": "commonjs"
+  }
+}
