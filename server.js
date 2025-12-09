@@ -3,7 +3,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const morgan = require("morgan");
-const globalError = require("./middlewares/errorMiddleware");
+const globalError = require("./middlewares/errorMiddleware.js");
 // const cron = require("node-cron");
 
 dotenv.config({ path: "config.env" });
