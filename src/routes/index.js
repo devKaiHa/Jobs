@@ -7,12 +7,12 @@ const employeeRoute = require("./employeeRoute");
 const wishlistRoute = require("./jobs/wishlistRoute");
 
 const mountRoutes = (app) => {
-  app.use("/api/auth", authRoute);
-  app.use("/api/jobCompanies", jobsCompaniesRoute);
-  app.use("/api/jobsSeekers", jobsSeekersRoute);
-  app.use("/api/jobAdvertisement", jobAdvertisementRoute);
-  app.use("/api/jobApplication", jobApplicationRoute);
-  app.use("/api/employee", employeeRoute);
-  app.use("/api/wishlist", wishlistRoute);
+  app.use("/jobs/api/auth", authRoute);
+  app.use("/jobs/api/jobCompanies", jobsCompaniesRoute);
+  app.use("/jobs/api/jobsSeekers", jobsSeekersRoute);
+  app.use("/jobs/api/jobAdvertisement", jobAdvertisementRoute);
+  app.use("/jobs/api/jobApplication", jobApplicationRoute);
+  app.use("/jobs/api/employee", employeeRoute);
+  app.use("/jobs/api/wishlist", wishlistRoute);
 };
 module.exports = mountRoutes;
