@@ -10,7 +10,7 @@ const {
 const {
   uploadEmployeeImage,
   processEmployeeImage,
-} = require("../services/employeeAuthService.ts");
+} = require("../services/employeeAuthService");
 
 const jobsUsersRoute = express.Router();
 
