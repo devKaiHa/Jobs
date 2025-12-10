@@ -208,25 +208,24 @@ export const deleteCompany = asyncHandler(
     const { id } = req.params;
     const { message } = req.body;
 
-    const company = await JobsCompany.findByIdAndDelete(id);
-
+    const company = await JobsCompany.findById(id);
     if (!company) {
       return next(new ApiError(`No company found for ID ${id}`, 404));
     }
 
-    const email = company.email;
-
     await sendEmail({
-      email,
-      subject: "Company Registration Rejected",
+      email: company.email,
+      subject: "LinkedOut Company Registration Rejected",
       message:
         message ||
         `Hello ${company.companyName}, we're sorry to inform you that your registration request has been declined.`,
     });
 
+    await JobsCompany.findByIdAndDelete(id);
+
     res.status(200).json({
       status: "success",
-      message: "Company deleted and email sent",
+      message: "Email sent and company deleted",
     });
   }
 );
