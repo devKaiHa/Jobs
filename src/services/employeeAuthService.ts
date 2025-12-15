@@ -178,7 +178,7 @@ export const login = asyncHandler(
     if (user.archives === "true")
       return next(new ApiError("Account is not active", 401));
 
-    const token = createToken(user._id);
+    const token = createToken(user);
     user.password = undefined;
 
     res.status(200).json({

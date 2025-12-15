@@ -5,6 +5,7 @@ const jobAdvertisementRoute = require("./jobAdvertisementRoute");
 const jobApplicationRoute = require("./jobs/jobApplicationRoute");
 const employeeRoute = require("./employeeRoute");
 const wishlistRoute = require("./jobs/wishlistRoute");
+const companyFieldRoute = require("./companyFieldRoute");
 
 const mountRoutes = (app) => {
   app.use("/jobs/api/auth", authRoute);
@@ -14,5 +15,6 @@ const mountRoutes = (app) => {
   app.use("/jobs/api/jobApplication", jobApplicationRoute);
   app.use("/jobs/api/employee", employeeRoute);
   app.use("/jobs/api/wishlist", wishlistRoute);
+  app.use("/jobs/api/field", companyFieldRoute);
 };
 module.exports = mountRoutes;

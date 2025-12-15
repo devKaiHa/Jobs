@@ -1,13 +1,13 @@
 import mongoose, { Document } from "mongoose";
 
 export interface IJobsCompany extends Document {
-  companyName: string
+  companyName: string;
   legalName?: string;
-  email: string; 
+  email: string;
   contactPersonName?: string;
   phone?: string;
   website?: string;
-  industry?: string;
+  industry?: mongoose.Types.ObjectId[];
   size?: string;
   registrationNumber?: string;
   address?: {
@@ -18,7 +18,7 @@ export interface IJobsCompany extends Document {
     country?: string;
   };
   logo?: string;
-  status?: "pending" | "accepted" | "rejected"; 
+  status?: "pending" | "accepted" | "rejected";
   verified?: boolean;
   jobAdvertisement?: mongoose.Types.ObjectId[];
   files?: string[];

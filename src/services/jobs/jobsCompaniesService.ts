@@ -153,14 +153,14 @@ export const updateCompany = asyncHandler(
     });
 
     if (!company) {
+      console.error(`❌ Invalid company with ID ${id}`);
       return next(new ApiError(`Invalid company with ID ${id}`, 404));
     }
 
     if (req.body.status === "accepted") {
       try {
-        // company.verified = true;
         await company.save();
-        await axios.post("http://localhost:80/api/companyinfo", {
+        await axios.post(`https://erpsy.testapi.smartinb.com/api/companyinfo`, {
           companyName: company.companyName,
           companyEmail: company.email,
           email: company.email,
@@ -169,6 +169,7 @@ export const updateCompany = asyncHandler(
           companyAddress: company.address.city,
           companyLogo: company.logo,
           jobsCompanyId: req.body.jobsCompanyId,
+          models: ["HR"],
         });
 
         res.status(200).json({
@@ -178,7 +179,7 @@ export const updateCompany = asyncHandler(
           data: company,
         });
       } catch (err: any) {
-        console.error("Error connecting to the main system:", err.message);
+        console.error("🔥 Error connecting to main system:", err.message);
         return next(
           new ApiError("Failed to send company data to the main system", 500)
         );
@@ -203,23 +204,34 @@ export const updateCompany = asyncHandler(
   }
 );
 
-export const deleteCompany = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const deleteCompany = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
     const { id } = req.params;
     const { message } = req.body;
 
     const company = await JobsCompany.findById(id);
+
     if (!company) {
+      console.log("❌ Company not found, aborting");
       return next(new ApiError(`No company found for ID ${id}`, 404));
     }
 
-    await sendEmail({
-      email: company.email,
-      subject: "LinkedOut Company Registration Rejected",
-      message:
-        message ||
-        `Hello ${company.companyName}, we're sorry to inform you that your registration request has been declined.`,
-    });
+    try {
+      await sendEmail({
+        email: company.email,
+        subject: "LinkedOut Company Registration Rejected",
+        message:
+          message ||
+          `Hello ${company.companyName}, we're sorry to inform you that your registration request has been declined.`,
+      });
+    } catch (err) {
+      console.log("❌ Email sending failed:", err);
+      return next(new ApiError("Failed to send email", 500));
+    }
 
     await JobsCompany.findByIdAndDelete(id);
 
@@ -227,5 +239,8 @@ export const deleteCompany = asyncHandler(
       status: "success",
       message: "Email sent and company deleted",
     });
+  } catch (err) {
+    console.log("❌ Unexpected error in deleteCompany:", err);
+    next(err);
   }
-);
+};

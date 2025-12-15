@@ -9,7 +9,7 @@ const jobCompanyModel = new mongoose.Schema(
     contactPersonName: String,
     phone: String,
     website: String,
-    industry: String,
+    industry: [{ type: mongoose.Schema.Types.ObjectId, ref: "CompanyField" }],
     size: String,
     registrationNumber: String,
     address: {
