@@ -108,6 +108,7 @@ exports.getCompanies = (0, express_async_handler_1.default)((req, res) => __awai
     });
 }));
 exports.createCompany = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    req.body.industry = JSON.parse(req.body.industry);
     const company = yield jobsCompaniesModel_1.default.create(req.body);
     res.status(201).json({
         status: "success",
@@ -117,7 +118,9 @@ exports.createCompany = (0, express_async_handler_1.default)((req, res) => __awa
 }));
 exports.getCompany = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
-    const company = yield jobsCompaniesModel_1.default.findById(id).populate("jobAdvertisement");
+    const company = yield jobsCompaniesModel_1.default.findById(id)
+        .populate("jobAdvertisement")
+        .populate("industry");
     if (!company) {
         return next(new apiError_1.default(`No company found for ID: ${id}`, 404));
     }
@@ -129,13 +132,13 @@ exports.updateCompany = (0, express_async_handler_1.default)((req, res, next) =>
         new: true,
     });
     if (!company) {
+        console.error(`❌ Invalid company with ID ${id}`);
         return next(new apiError_1.default(`Invalid company with ID ${id}`, 404));
     }
     if (req.body.status === "accepted") {
         try {
-            // company.verified = true;
             yield company.save();
-            yield axios_1.default.post("http://localhost:80/api/companyinfo", {
+            yield axios_1.default.post(`https://erpsy.testapi.smartinb.com/api/companyinfo`, {
                 companyName: company.companyName,
                 companyEmail: company.email,
                 email: company.email,
@@ -144,6 +147,7 @@ exports.updateCompany = (0, express_async_handler_1.default)((req, res, next) =>
                 companyAddress: company.address.city,
                 companyLogo: company.logo,
                 jobsCompanyId: req.body.jobsCompanyId,
+                models: ["HR"],
             });
             res.status(200).json({
                 status: "success",
@@ -152,7 +156,7 @@ exports.updateCompany = (0, express_async_handler_1.default)((req, res, next) =>
             });
         }
         catch (err) {
-            console.error("Error connecting to the main system:", err.message);
+            console.error("🔥 Error connecting to main system:", err.message);
             return next(new apiError_1.default("Failed to send company data to the main system", 500));
         }
         return;
@@ -171,22 +175,36 @@ exports.updateCompany = (0, express_async_handler_1.default)((req, res, next) =>
         data: company,
     });
 }));
-exports.deleteCompany = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
-    const { message } = req.body;
-    const company = yield jobsCompaniesModel_1.default.findByIdAndDelete(id);
-    if (!company) {
-        return next(new apiError_1.default(`No company found for ID ${id}`, 404));
+const deleteCompany = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const { message } = req.body;
+        const company = yield jobsCompaniesModel_1.default.findById(id);
+        if (!company) {
+            console.log("❌ Company not found, aborting");
+            return next(new apiError_1.default(`No company found for ID ${id}`, 404));
+        }
+        try {
+            yield (0, sendEmail_1.default)({
+                email: company.email,
+                subject: "LinkedOut Company Registration Rejected",
+                message: message ||
+                    `Hello ${company.companyName}, we're sorry to inform you that your registration request has been declined.`,
+            });
+        }
+        catch (err) {
+            console.log("❌ Email sending failed:", err);
+            return next(new apiError_1.default("Failed to send email", 500));
+        }
+        yield jobsCompaniesModel_1.default.findByIdAndDelete(id);
+        res.status(200).json({
+            status: "success",
+            message: "Email sent and company deleted",
+        });
     }
-    const email = company.email;
-    yield (0, sendEmail_1.default)({
-        email,
-        subject: "Company Registration Rejected",
-        message: message ||
-            `Hello ${company.companyName}, we're sorry to inform you that your registration request has been declined.`,
-    });
-    res.status(200).json({
-        status: "success",
-        message: "Company deleted and email sent",
-    });
-}));
+    catch (err) {
+        console.log("❌ Unexpected error in deleteCompany:", err);
+        next(err);
+    }
+});
+exports.deleteCompany = deleteCompany;

@@ -132,7 +132,7 @@ exports.login = (0, express_async_handler_1.default)((req, res, next) => __await
         return next(new apiError_1.default("Incorrect password", 401));
     if (user.archives === "true")
         return next(new apiError_1.default("Account is not active", 401));
-    const token = (0, createToken_1.default)(user._id);
+    const token = (0, createToken_1.default)(user);
     user.password = undefined;
     res.status(200).json({
         status: "success",

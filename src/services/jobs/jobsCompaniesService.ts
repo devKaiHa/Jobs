@@ -122,6 +122,7 @@ export const getCompanies = asyncHandler(
 
 export const createCompany = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
+    req.body.industry = JSON.parse(req.body.industry);
     const company: IJobsCompany = await JobsCompany.create(req.body);
     res.status(201).json({
       status: "success",
@@ -134,7 +135,9 @@ export const createCompany = asyncHandler(
 export const getCompany = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { id } = req.params;
-    const company = await JobsCompany.findById(id).populate("jobAdvertisement");
+    const company = await JobsCompany.findById(id)
+      .populate("jobAdvertisement")
+      .populate("industry");
 
     if (!company) {
       return next(new ApiError(`No company found for ID: ${id}`, 404));

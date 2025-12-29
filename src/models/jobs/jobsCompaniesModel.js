@@ -11,7 +11,7 @@ const jobCompanyModel = new mongoose_1.default.Schema({
     contactPersonName: String,
     phone: String,
     website: String,
-    industry: String,
+    industry: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: "CompanyField" }],
     size: String,
     registrationNumber: String,
     address: {
