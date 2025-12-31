@@ -35,6 +35,7 @@ exports.getWishlists = (0, express_async_handler_1.default)((req, res, next) => 
         .populate("job");
     res.status(200).json({
         status: "success",
+        page,
         totalPages,
         results: totalItems,
         data: wishlists,

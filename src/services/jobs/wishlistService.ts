@@ -27,6 +27,7 @@ export const getWishlists = asyncHandler(
       .populate("job");
     res.status(200).json({
       status: "success",
+      page,
       totalPages,
       results: totalItems,
       data: wishlists,
